@@ -164,6 +164,43 @@ describe('X-0055: dias contados por trecho e visita só com o dia que a mensagem
   });
 });
 
+describe('X-0057: data com ano ou mês por extenso não vira outra data', () => {
+  const lead = (texto: string): Lead => ({
+    id: 'l1', telefone: '1', nome: 'Joana', origem: '', etapa: 'conversando', criadoEm: 0, ultimaDoCliente: AGORA, ultimaDaEmpresa: null,
+    followUps: 0, consumoKwh: 300, cidade: 'Campinas', mensagens: [{ id: 'm', de: 'cliente', texto, em: AGORA }], notas: [],
+  });
+  it.each([
+    'Pode ser dia 03/10/2027 às 14:00', // ano futuro explícito
+    'Pode ser dia 03/10/2025 às 14:00', // ano passado explícito
+    'Pode ser 03/10/27 às 14h', // ano com dois dígitos
+    'Pode ser dia 3 de novembro às 10h', // mês por extenso: antes virava 03/10
+  ])('"%s" não marca e pede o dia no formato dia/mês', texto => {
+    expect(extrairVisita(texto, AGORA)).toBeNull();
+    expect(aceiteInequivoco(texto)).toBe(false);
+    const s = sugerirPorRegras(lead(texto), kb, AGORA);
+    expect(s.visita).toBeNull();
+    expect(s.novaEtapa).not.toBe('visita');
+    expect(s.resposta).toMatch(/formato dia\/mês/);
+  });
+  it('controle: o nome Marco não é o mês de março', () => {
+    const s = sugerirPorRegras(lead('Aqui é o Marco, pode ser amanhã às 10h, combinado'), kb, AGORA);
+    expect(s.visita?.quando).toBe(Date.parse('2026-09-29T10:00:00-03:00'));
+  });
+  it('controle: dia/mês sem ano continua marcando', () => {
+    const s = sugerirPorRegras(lead('Pode ser dia 03/10 às 14:00'), kb, AGORA);
+    expect(s.visita?.quando).toBe(Date.parse('2026-10-03T14:00:00-03:00'));
+  });
+  it('modelo devolve a data com ano (03/10/2027): a guarda pede confirmação', async () => {
+    const claude: typeof fetch = async () =>
+      new Response(JSON.stringify({ content: [{ type: 'text', text: JSON.stringify({ resposta: 'Combinado!', novaEtapa: 'visita', visita: { quando: '2027-10-03T14:00:00-03:00' } }) }] }), { status: 200 });
+    const a = new Assistente(kb, new EnviadorSimulado(), { modo: 'sugerir', claude: { apiKey: 'teste', model: 'modelo-teste', fetchImpl: claude } }, () => AGORA);
+    await a.receber(lerWebhook(payloadDeTeste('5519990000009', 'Joana', 'Pode ser dia 03/10/2027 às 14:00', 'c1', AGORA))[0]!);
+    const s = [...a.sugestoes.values()][0]!;
+    expect(s.visita).toBeNull();
+    expect(s.resposta).toMatch(/formato dia\/mês/);
+  });
+});
+
 describe('DEMO-03: aprovação só vale para a sugestão que o vendedor viu', () => {
   function montar(enviador: Enviador = new EnviadorSimulado()) {
     let n = 0;

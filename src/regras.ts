@@ -12,6 +12,8 @@ import {
   primeiroNome,
   recusaOuRemarcacao,
   aceiteInequivoco,
+  contarHorarios,
+  dataForaDoFormato,
 } from './texto.js';
 
 /** Resposta quando o cliente cita horário sem aceite claro: pede um único dia e horário, sem marcar nada. */
@@ -21,7 +23,9 @@ export function pedirConfirmacao(lead: Lead, texto: string) {
   return {
     resposta: recusa
       ? `Sem problema${nome ? `, ${nome}` : ''}. Qual dia e horário ficam melhores para você? A visita técnica é sem custo e leva cerca de uma hora.`
-      : `${nome ? `${nome}, ` : ''}para eu reservar certinho, pode me confirmar um único dia e horário?`,
+      : dataForaDoFormato(texto)
+        ? `${nome ? `${nome}, ` : ''}para eu reservar certinho, pode me mandar o dia no formato dia/mês, como 03/10, e o horário?`
+        : `${nome ? `${nome}, ` : ''}para eu reservar certinho, pode me confirmar um único dia e horário?`,
     intencao: recusa ? 'recusou ou quer remarcar' : 'horário sem confirmação',
     proximaAcao: 'Combinar um dia e horário antes de marcar a visita.',
     novaEtapa: null,
@@ -66,6 +70,8 @@ export function sugerirPorRegras(lead: Lead, kb: BaseConhecimento, agora: number
       novaEtapa: lead.etapa === 'novo' ? 'conversando' : null,
     };
 
+  // Data com ano ou mês por extenso junto de um horário: não adivinha, pede no formato dia/mês.
+  if (dataForaDoFormato(texto) && contarHorarios(texto) > 0) return { ...base, dados, ...pedirConfirmacao(lead, texto) };
   const quando = extrairVisita(texto, agora);
   if (quando !== null && !aceiteInequivoco(texto)) return { ...base, dados, ...pedirConfirmacao(lead, texto) };
   if (quando !== null) {

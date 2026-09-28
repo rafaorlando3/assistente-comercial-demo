@@ -84,13 +84,22 @@ export function contarDias(texto: string): number {
 }
 
 /**
+ * Data num formato que a extração não entende por inteiro: com ano ("03/10/2027", "3/10/27") ou com mês por extenso
+ * ("dia 3 de novembro"). A extração ignoraria o ano ou o mês e marcaria outra data; então não extrai e pede confirmação.
+ */
+export function dataForaDoFormato(texto: string): boolean {
+  const t = normalizar(texto);
+  return /\b\d{1,2}\/\d{1,2}\/\d{2,4}\b/.test(t) || /\b\d{1,2}(?:o|º)?\s+de\s+(janeiro|fevereiro|marco|abril|maio|junho|julho|agosto|setembro|outubro|novembro|dezembro)\b/.test(t);
+}
+
+/**
  * Só é aceite de visita exatamente um dia explícito e um horário, sem negativa, incerteza ou alternativa ("ou").
  * Sem dia ("às 10h"), com dois dias ou com o mesmo dia dito de dois jeitos ("sábado dia 03/10"), pede confirmação:
  * marcar visita errada custa mais que perguntar de novo.
  */
 export function aceiteInequivoco(texto: string): boolean {
   const t = normalizar(texto);
-  return !recusaOuRemarcacao(texto) && !incerteza(texto) && !/\bou\b/.test(t) && contarHorarios(texto) === 1 && contarDias(texto) === 1;
+  return !recusaOuRemarcacao(texto) && !incerteza(texto) && !/\bou\b/.test(t) && !dataForaDoFormato(texto) && contarHorarios(texto) === 1 && contarDias(texto) === 1;
 }
 
 const RE_HORA = /\b(?:as\s+|a\s+)?(\d{1,2})(?:\s*h\s*(\d{2})?|:(\d{2})|\s+horas?)\b/g;
@@ -115,6 +124,7 @@ function msBR(ano: number, mes: number, dia: number, hora: number, minuto: numbe
  * Só devolve horário no futuro e entre 7h e 19h. Sem dia explícito, não adivinha.
  */
 export function extrairVisita(texto: string, agora: number): number | null {
+  if (dataForaDoFormato(texto)) return null;
   const t = normalizar(texto);
   const h = t.match(/\b(?:as\s+|a\s+)?(\d{1,2})(?:\s*h\s*(\d{2})?|:(\d{2})|\s+horas?)\b/);
   if (!h) return null;
