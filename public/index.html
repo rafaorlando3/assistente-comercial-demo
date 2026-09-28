@@ -79,7 +79,9 @@ const ETAPAS=['novo','conversando','proposta','visita','fechado','perdido'];
 const NOMES={novo:'Novo',conversando:'Em conversa',proposta:'Proposta',visita:'Visita marcada',fechado:'Fechado',perdido:'Perdido'};
 let E=null, sel=null, editando=false;
 const $=id=>document.getElementById(id);
-const el=(tag,attrs={},...kids)=>{const n=document.createElement(tag);for(const[k,v]of Object.entries(attrs)){if(k==='class')n.className=v;else if(k.startsWith('on'))n.addEventListener(k.slice(2),v);else n.setAttribute(k,v)}for(const k of kids)n.append(k instanceof Node?k:document.createTextNode(String(k)));return n};
+// O erro já aparece na tela (api() escreve em #erro); aqui só evita promessa rejeitada sem tratamento.
+const seguro=f=>e=>{Promise.resolve().then(()=>f(e)).catch(()=>{})};
+const el=(tag,attrs={},...kids)=>{const n=document.createElement(tag);for(const[k,v]of Object.entries(attrs)){if(k==='class')n.className=v;else if(k.startsWith('on'))n.addEventListener(k.slice(2),seguro(v));else n.setAttribute(k,v)}for(const k of kids)n.append(k instanceof Node?k:document.createTextNode(String(k)));return n};
 const hora=ms=>new Date(ms).toLocaleString('pt-BR',{timeZone:'America/Sao_Paulo',weekday:'short',day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'});
 async function api(p,b){$('erro').textContent='';const r=await fetch(p,b===undefined?{}:{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(b)});const j=await r.json();if(!r.ok){if(r.status===409&&j.estado){E=j.estado;editando=false;desenhar()}$('erro').textContent=j.erro||'Erro';throw new Error(j.erro)}return j}
 async function carregar(){E=await api('/api/estado');desenhar()}
@@ -117,13 +119,13 @@ function desenhar(){
   const V=$('visitas');const fut=E.visitas.filter(v=>v.quando>E.agora-3600e3);V.replaceChildren(...(fut.length?fut.map(v=>el('div',{class:'item'},hora(v.quando)+' · '+v.titulo)):[el('div',{class:'vazio'},'Nenhuma visita marcada.')]));
   $('eventos').replaceChildren(...E.eventos.slice(0,8).map(e=>el('div',{class:'item aviso'},hora(e.em)+' · '+e.texto)));
 }
-$('etapaSel').addEventListener('change',async e=>{E=await api('/api/leads/'+sel+'/etapa',{etapa:e.target.value});desenhar()});
-$('simEnviar').addEventListener('click',async()=>{const l=E.leads.find(x=>x.id===sel);const t=$('simMsg').value.trim();if(!l||!t)return;editando=false;E=await api('/api/simular',{leadId:l.id,texto:t});$('simMsg').value='';desenhar()});
-$('simMsg').addEventListener('keydown',e=>{if(e.key==='Enter')$('simEnviar').click()});
-$('nEnviar').addEventListener('click',async()=>{const t=$('nMsg').value.trim();if(!t){$('erro').textContent='Escreva a mensagem do cliente.';return}const r=await api('/api/simular',{nome:$('nNome').value.trim(),texto:t});E=r;sel=r.leadId??null;['nNome','nMsg'].forEach(i=>$(i).value='');desenhar()});
-$('reiniciar').addEventListener('click',async()=>{editando=false;sel=null;E=await api('/api/reiniciar',{});desenhar()});
-$('avancar').addEventListener('click',async()=>{editando=false;E=await api('/api/relogio',{horas:24});desenhar()});
-$('resumo').addEventListener('click',async()=>{const r=await api('/api/resumo');$('resumoTxt').hidden=false;$('resumoTxt').textContent=r.texto});
+$('etapaSel').addEventListener('change',seguro(async e=>{E=await api('/api/leads/'+sel+'/etapa',{etapa:e.target.value});desenhar()}));
+$('simEnviar').addEventListener('click',seguro(async()=>{const l=E.leads.find(x=>x.id===sel);const t=$('simMsg').value.trim();if(!l||!t)return;editando=false;E=await api('/api/simular',{leadId:l.id,texto:t});$('simMsg').value='';desenhar()}));
+$('simMsg').addEventListener('keydown',seguro(e=>{if(e.key==='Enter')$('simEnviar').click()}));
+$('nEnviar').addEventListener('click',seguro(async()=>{const t=$('nMsg').value.trim();if(!t){$('erro').textContent='Escreva a mensagem do cliente.';return}const r=await api('/api/simular',{nome:$('nNome').value.trim(),texto:t});E=r;sel=r.leadId??null;['nNome','nMsg'].forEach(i=>$(i).value='');desenhar()}));
+$('reiniciar').addEventListener('click',seguro(async()=>{editando=false;sel=null;E=await api('/api/reiniciar',{});desenhar()}));
+$('avancar').addEventListener('click',seguro(async()=>{editando=false;E=await api('/api/relogio',{horas:24});desenhar()}));
+$('resumo').addEventListener('click',seguro(async()=>{const r=await api('/api/resumo');$('resumoTxt').hidden=false;$('resumoTxt').textContent=r.texto}));
 carregar();setInterval(()=>{if(!editando&&document.activeElement?.tagName!=='INPUT')carregar().catch(()=>{})},5000);
 </script>
 </body>
