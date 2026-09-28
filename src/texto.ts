@@ -61,11 +61,36 @@ export function cidadeMencionada(texto: string): string | null {
   return m ? m[1]!.trim() : null;
 }
 
-/** Negativa, cancelamento ou pedido para remarcar: um horário citado aqui NÃO é aceite de visita. */
+/** Negativa, cancelamento ou pedido para remarcar. Qualquer "não" conta: melhor pedir confirmação a mais. */
 export function recusaOuRemarcacao(texto: string): boolean {
-  return /\b(nao (posso|da|consigo|vai dar|tenho como|vou poder|estarei|vou estar|fica bom|serve)|impossivel|cancel\w*|desmarc\w*|remarc\w*|adiar|outro (dia|horario)|nao,)/.test(
+  return /\b(nao|nunca|impossivel|cancel\w*|desmarc\w*|remarc\w*|adiar|outro (dia|horario))\b/.test(normalizar(texto));
+}
+
+/** Incerteza: "talvez", "acho que", "vou ver", "se der"... */
+export function incerteza(texto: string): boolean {
+  return /\b(talvez|acho|quem sabe|sei la|depende|sera que|pode ser que|vou ver|vou verificar|confirmo depois|te aviso|a confirmar|provavel\w*|possivel\w*|se der|se eu puder|nao sei)\b/.test(
     normalizar(texto),
   );
+}
+
+/** Quantos dias o texto cita (hoje, amanhã, dia da semana, "dia 5", 05/10). */
+export function contarDias(texto: string): number {
+  const t = normalizar(texto);
+  const achados = [
+    ...t.matchAll(/\b(depois de amanha|amanha|hoje|domingo|segunda|terca|quarta|quinta|sexta|sabado)\b/g),
+    ...t.matchAll(/\bdia \d{1,2}\b|\b\d{1,2}\/\d{1,2}\b/g),
+  ].map(m => m[0]);
+  // "depois de amanhã" também casa "amanhã": conta uma vez só
+  return achados.filter(a => !(a === 'amanha' && achados.includes('depois de amanha'))).length;
+}
+
+/**
+ * Só é aceite de visita um único dia e horário, sem negativa, incerteza ou alternativa ("ou").
+ * Qualquer outra coisa pede confirmação: marcar visita errada custa mais que perguntar de novo.
+ */
+export function aceiteInequivoco(texto: string): boolean {
+  const t = normalizar(texto);
+  return !recusaOuRemarcacao(texto) && !incerteza(texto) && !/\bou\b/.test(t) && contarHorarios(texto) === 1 && contarDias(texto) <= 1;
 }
 
 const RE_HORA = /\b(?:as\s+|a\s+)?(\d{1,2})(?:\s*h\s*(\d{2})?|:(\d{2})|\s+horas?)\b/g;

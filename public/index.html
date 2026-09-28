@@ -83,7 +83,11 @@ const $=id=>document.getElementById(id);
 const seguro=f=>e=>{Promise.resolve().then(()=>f(e)).catch(()=>{})};
 const el=(tag,attrs={},...kids)=>{const n=document.createElement(tag);for(const[k,v]of Object.entries(attrs)){if(k==='class')n.className=v;else if(k.startsWith('on'))n.addEventListener(k.slice(2),seguro(v));else n.setAttribute(k,v)}for(const k of kids)n.append(k instanceof Node?k:document.createTextNode(String(k)));return n};
 const hora=ms=>new Date(ms).toLocaleString('pt-BR',{timeZone:'America/Sao_Paulo',weekday:'short',day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'});
-async function api(p,b){$('erro').textContent='';const r=await fetch(p,b===undefined?{}:{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(b)});const j=await r.json();if(!r.ok){if(r.status===409&&j.estado){E=j.estado;editando=false;desenhar()}$('erro').textContent=j.erro||'Erro';throw new Error(j.erro)}return j}
+async function api(p,b){$('erro').textContent='';const post=b!==undefined;let r;
+  // Falha de rede ou resposta que não é JSON: avisa na tela e mantém o que o vendedor estava editando. Nunca reenvia sozinho.
+  try{r=await fetch(p,post?{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(b)}:{})}catch(e){$('erro').textContent=post?'Sem resposta do servidor. Não dá para saber se a ação foi feita: confira a conversa antes de repetir.':'Sem conexão com o servidor. Tentando de novo em instantes.';throw e}
+  let j;try{j=await r.json()}catch(e){$('erro').textContent=`Resposta inesperada do servidor (HTTP ${r.status}).`+(post?' Não dá para saber se a ação foi feita: confira a conversa antes de repetir.':'');throw e}
+  if(!r.ok){if(r.status===409&&j.estado){E=j.estado;editando=false;desenhar()}$('erro').textContent=j.erro||('Erro '+r.status);throw new Error(j.erro)}return j}
 async function carregar(){E=await api('/api/estado');desenhar()}
 function desenhar(){
   $('empresa').textContent='Assistente comercial · '+E.empresa;
@@ -112,7 +116,7 @@ function desenhar(){
       const modelo=/modelo aprovado/.test(s.intencao);const ta=el('textarea',{id:'sugTxt'});ta.value=s.resposta;ta.disabled=modelo;ta.addEventListener('input',()=>{editando=true});const versao=s.versao;
       S.replaceChildren(el('div',{class:'sug'},el('div',{class:'meta'},`Sugestão (${s.fonte==='claude'?'Claude':'regras'}) · ${s.intencao}${s.objecao?' · objeção: '+s.objecao:''}`),ta,
         el('div',{class:'meta'},'Próxima ação: '+s.proximaAcao+(s.novaEtapa?' · etapa → '+NOMES[s.novaEtapa]:'')+(s.visita?' · agenda: '+hora(s.visita.quando):'')),
-        el('div',{class:'row'},el('button',{class:'p',onclick:async()=>{editando=false;E=await api('/api/leads/'+l.id+'/aprovar',modelo?{versao}:{versao,texto:$('sugTxt').value});desenhar()}},modelo?'Enviar modelo (simulado)':'Enviar'),el('button',{onclick:async()=>{editando=false;E=await api('/api/leads/'+l.id+'/descartar',{versao});desenhar()}},'Descartar'))))}
+        el('div',{class:'row'},el('button',{class:'p',onclick:async()=>{E=await api('/api/leads/'+l.id+'/aprovar',modelo?{versao}:{versao,texto:$('sugTxt').value});editando=false;desenhar()}},modelo?(E.enviador==='simulado'?'Enviar modelo (simulado)':'Enviar modelo aprovado'):'Enviar'),el('button',{onclick:async()=>{E=await api('/api/leads/'+l.id+'/descartar',{versao});editando=false;desenhar()}},'Descartar'))))}
     const es=$('etapaSel');es.replaceChildren(...ETAPAS.map(e=>{const o=el('option',{value:e},NOMES[e]);if(e===l.etapa)o.selected=true;return o}));
   }
   const T=$('tarefas');T.replaceChildren(...(E.tarefas.length?E.tarefas.map(t=>el('div',{class:'item'},(t.tipo==='responder'?'💬 ':t.tipo==='visita'?'📍 ':'🔁 ')+t.texto)):[el('div',{class:'vazio'},'Nada pendente.')]));
@@ -120,11 +124,11 @@ function desenhar(){
   $('eventos').replaceChildren(...E.eventos.slice(0,8).map(e=>el('div',{class:'item aviso'},hora(e.em)+' · '+e.texto)));
 }
 $('etapaSel').addEventListener('change',seguro(async e=>{E=await api('/api/leads/'+sel+'/etapa',{etapa:e.target.value});desenhar()}));
-$('simEnviar').addEventListener('click',seguro(async()=>{const l=E.leads.find(x=>x.id===sel);const t=$('simMsg').value.trim();if(!l||!t)return;editando=false;E=await api('/api/simular',{leadId:l.id,texto:t});$('simMsg').value='';desenhar()}));
+$('simEnviar').addEventListener('click',seguro(async()=>{const l=E.leads.find(x=>x.id===sel);const t=$('simMsg').value.trim();if(!l||!t)return;E=await api('/api/simular',{leadId:l.id,texto:t});editando=false;$('simMsg').value='';desenhar()}));
 $('simMsg').addEventListener('keydown',seguro(e=>{if(e.key==='Enter')$('simEnviar').click()}));
 $('nEnviar').addEventListener('click',seguro(async()=>{const t=$('nMsg').value.trim();if(!t){$('erro').textContent='Escreva a mensagem do cliente.';return}const r=await api('/api/simular',{nome:$('nNome').value.trim(),texto:t});E=r;sel=r.leadId??null;['nNome','nMsg'].forEach(i=>$(i).value='');desenhar()}));
-$('reiniciar').addEventListener('click',seguro(async()=>{editando=false;sel=null;E=await api('/api/reiniciar',{});desenhar()}));
-$('avancar').addEventListener('click',seguro(async()=>{editando=false;E=await api('/api/relogio',{horas:24});desenhar()}));
+$('reiniciar').addEventListener('click',seguro(async()=>{E=await api('/api/reiniciar',{});editando=false;sel=null;desenhar()}));
+$('avancar').addEventListener('click',seguro(async()=>{E=await api('/api/relogio',{horas:24});editando=false;desenhar()}));
 $('resumo').addEventListener('click',seguro(async()=>{const r=await api('/api/resumo');$('resumoTxt').hidden=false;$('resumoTxt').textContent=r.texto}));
 carregar();setInterval(()=>{if(!editando&&document.activeElement?.tagName!=='INPUT')carregar().catch(()=>{})},5000);
 </script>

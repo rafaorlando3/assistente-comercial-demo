@@ -6,13 +6,28 @@ import {
   detectarObjecao,
   extrairCidade,
   extrairConsumo,
-  contarHorarios,
   extrairVisita,
   formatarQuando,
   pediuParaSair,
   primeiroNome,
   recusaOuRemarcacao,
+  aceiteInequivoco,
 } from './texto.js';
+
+/** Resposta quando o cliente cita horário sem aceite claro: pede um único dia e horário, sem marcar nada. */
+export function pedirConfirmacao(lead: Lead, texto: string) {
+  const nome = primeiroNome(lead.nome);
+  const recusa = recusaOuRemarcacao(texto);
+  return {
+    resposta: recusa
+      ? `Sem problema${nome ? `, ${nome}` : ''}. Qual dia e horário ficam melhores para você? A visita técnica é sem custo e leva cerca de uma hora.`
+      : `${nome ? `${nome}, ` : ''}para eu reservar certinho, pode me confirmar um único dia e horário?`,
+    intencao: recusa ? 'recusou ou quer remarcar' : 'horário sem confirmação',
+    proximaAcao: 'Combinar um dia e horário antes de marcar a visita.',
+    novaEtapa: null,
+    visita: null,
+  } as const;
+}
 
 export function faixaPara(kb: BaseConhecimento, kwh: number) {
   return kb.faixasDePreco.find(f => kwh <= f.ateKwhMes) ?? null;
@@ -52,19 +67,7 @@ export function sugerirPorRegras(lead: Lead, kb: BaseConhecimento, agora: number
     };
 
   const quando = extrairVisita(texto, agora);
-  if (quando !== null && (recusaOuRemarcacao(texto) || contarHorarios(texto) > 1)) {
-    const recusa = recusaOuRemarcacao(texto);
-    return {
-      ...base,
-      dados,
-      resposta: recusa
-        ? `Sem problema${nome ? `, ${nome}` : ''}. Qual dia e horário ficam melhores para você? A visita técnica é sem custo e leva cerca de uma hora.`
-        : `${ola}para eu reservar certinho, pode me confirmar um único dia e horário?`,
-      intencao: recusa ? 'recusou ou quer remarcar' : 'horário ambíguo',
-      proximaAcao: 'Combinar um dia e horário antes de marcar a visita.',
-      novaEtapa: null,
-    };
-  }
+  if (quando !== null && !aceiteInequivoco(texto)) return { ...base, dados, ...pedirConfirmacao(lead, texto) };
   if (quando !== null) {
     const onde = cidadeLead ? ` em ${cidadeLead}` : '';
     return {

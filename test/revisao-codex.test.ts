@@ -68,6 +68,12 @@ describe('DEMO-02: horário mencionado não é aceite de visita', () => {
     'Quero cancelar a visita de amanhã às 10h',
     'Preciso remarcar, sábado às 9h não consigo',
     'Pode ser amanhã às 10h ou sábado às 9h?',
+    // X-0053: negativa fora da lista antiga, incerteza e dois dias com um horário só
+    'Não quero amanhã às 10h',
+    'Talvez amanhã às 10h',
+    'Pode ser amanhã ou sábado às 10h?',
+    'Amanhã às 10h ou mais tarde?', // alternativa sem segundo dia nem segundo horário
+    'Amanhã e sábado às 10h estou livre', // dois dias, um horário, sem "ou"
   ])('"%s" não marca visita', texto => {
     const s = sugerirPorRegras(lead(texto), kb, AGORA);
     expect(s.visita).toBeNull();
@@ -83,6 +89,8 @@ describe('DEMO-02: horário mencionado não é aceite de visita', () => {
     expect(s.fonte).toBe('claude');
     expect(s.visita).toBeNull();
     expect(s.novaEtapa).not.toBe('visita');
+    expect(s.resposta).not.toMatch(/Combinado/); // o texto também pede confirmação (X-0053)
+    expect(s.resposta).toMatch(/Qual dia e horário/);
   });
   it('confirmação positiva continua marcando', () => {
     const s = sugerirPorRegras(lead('Pode ser amanhã às 10h, combinado'), kb, AGORA);

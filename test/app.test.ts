@@ -213,7 +213,7 @@ describe('Claude', () => {
 });
 
 describe('hora da mensagem e resultado do envio', () => {
-  it('entrega atrasada não reabre a janela de 24h; ordem invertida mantém a mais recente; hora futura vira agora', async () => {
+  it('entrega atrasada não reabre a janela de 24h; ordem invertida mantém a mais recente; hora futura não abre a janela', async () => {
     const { a } = montar();
     const tel = '5519990000009';
     await a.receber({ id: 'w1', telefone: tel, nome: 'Joana', texto: 'Oi', em: INICIO - 48 * H });
@@ -224,7 +224,9 @@ describe('hora da mensagem e resultado do envio', () => {
     await a.receber({ id: 'w3', telefone: tel, nome: 'Joana', texto: 'mensagem velha', em: INICIO - 30 * H });
     expect(l.ultimaDoCliente).toBe(INICIO - 1 * H);
     await a.receber({ id: 'w4', telefone: tel, nome: 'Joana', texto: 'do futuro', em: INICIO + 10 * H });
-    expect(l.ultimaDoCliente).toBe(INICIO);
+    expect(l.ultimaDoCliente).toBe(INICIO - 1 * H); // hora não confiável: guardada, mas não abre a janela
+    await a.receber({ id: 'w5', telefone: tel, nome: 'Joana', texto: 'relógio 2 min adiantado', em: INICIO + 2 * 60_000 });
+    expect(l.ultimaDoCliente).toBe(INICIO); // dentro da tolerância de 5 min: conta como agora
   });
   it('hora inválida no webhook não abre a janela', async () => {
     const { a } = montar();

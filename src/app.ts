@@ -2,10 +2,10 @@
 import { randomUUID } from 'node:crypto';
 import type { BaseConhecimento, Etapa, Lead, Sugestao, Visita } from './types.js';
 import type { Enviador, Recebida } from './whatsapp.js';
-import { sugerirPorRegras } from './regras.js';
+import { pedirConfirmacao, sugerirPorRegras } from './regras.js';
 import { sugerirPorClaude, type ConfigClaude } from './claude.js';
 import { dentroDaJanela24h, followUpsDevidos, PADRAO, resumoDoDia, tarefas, type ConfigFollowUp } from './crm.js';
-import { contarHorarios, primeiroNome, recusaOuRemarcacao } from './texto.js';
+import { aceiteInequivoco, primeiroNome } from './texto.js';
 
 export type Config = {
   modo: 'sugerir' | 'automatico';
@@ -98,8 +98,9 @@ export class Assistente {
     }
     if (!lead.nome && r.nome) lead.nome = r.nome;
     // A janela de 24h conta da hora da mensagem do cliente, não da hora em que o webhook chegou.
-    // Entrega atrasada não reabre a janela; hora futura é limitada a agora; hora inválida (0) não abre janela.
-    const hora = r.em > 0 ? Math.min(r.em, agora) : null;
+    // Entrega atrasada não reabre a janela. Hora inválida (0) ou no futuro (além de 5 min de tolerância de relógio)
+    // não é confiável: a mensagem é guardada, mas não abre a janela.
+    const hora = r.em > 0 && r.em <= agora + 5 * 60_000 ? Math.min(r.em, agora) : null;
     lead.mensagens.push({ id: r.id, de: 'cliente', texto: r.texto, em: hora ?? agora });
     if (hora !== null) lead.ultimaDoCliente = Math.max(lead.ultimaDoCliente ?? 0, hora);
     lead.followUps = 0;
@@ -124,15 +125,10 @@ export class Assistente {
         s = sugerirPorRegras(lead, this.kb, agora);
       }
     } else s = sugerirPorRegras(lead, this.kb, agora);
-    // Guarda comum às duas fontes: negativa, remarcação ou mais de um horário nunca marcam visita.
+    // Guarda comum às duas fontes: sem aceite inequívoco de um único dia e horário, não marca visita,
+    // e o texto também pede confirmação (texto e etapa precisam dizer a mesma coisa).
     const ultima = [...lead.mensagens].reverse().find(m => m.de === 'cliente')?.texto ?? '';
-    if (s.visita && (recusaOuRemarcacao(ultima) || contarHorarios(ultima) > 1))
-      s = {
-        ...s,
-        visita: null,
-        novaEtapa: s.novaEtapa === 'visita' ? null : s.novaEtapa,
-        proximaAcao: 'Combinar um dia e horário antes de marcar a visita.',
-      };
+    if ((s.visita || s.novaEtapa === 'visita') && !aceiteInequivoco(ultima)) s = { ...s, ...pedirConfirmacao(lead, ultima) };
     if (this.geracao.get(lead.id) !== n) return null; // chegou mensagem mais nova: esta sugestão é descartada
     if (s.dados.consumoKwh) lead.consumoKwh = s.dados.consumoKwh;
     if (s.dados.cidade) lead.cidade = s.dados.cidade;
