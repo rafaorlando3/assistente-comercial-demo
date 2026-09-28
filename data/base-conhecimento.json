@@ -1,0 +1,62 @@
+{
+  "empresa": "Sol do Vale Energia",
+  "aviso": "Empresa fictícia e valores ilustrativos, só para a demonstração. Na implantação, a base é trocada pelos dados reais da empresa.",
+  "cidadesAtendidas": [
+    "Campinas",
+    "Valinhos",
+    "Vinhedo",
+    "Indaiatuba",
+    "Sumaré",
+    "Hortolândia",
+    "Paulínia"
+  ],
+  "prazoInstalacaoDias": "7 a 15 dias depois da aprovação da distribuidora",
+  "garantias": [
+    "Placas: 12 anos de garantia de produto e 25 anos de desempenho",
+    "Inversor: 10 anos",
+    "Instalação: 1 ano, com visita técnica sem custo"
+  ],
+  "financiamento": "Financiamento solar em até 72 vezes, com análise de crédito do banco parceiro. Em muitos casos a parcela fica perto do valor que o cliente já paga de conta de luz.",
+  "tarifaReferenciaRsPorKwh": 1.0,
+  "faixasDePreco": [
+    {
+      "ateKwhMes": 250,
+      "kwp": "2,2 kWp",
+      "faixa": "R$ 9 mil a R$ 11 mil"
+    },
+    {
+      "ateKwhMes": 400,
+      "kwp": "3,3 kWp",
+      "faixa": "R$ 12 mil a R$ 15 mil"
+    },
+    {
+      "ateKwhMes": 600,
+      "kwp": "4,9 kWp",
+      "faixa": "R$ 16 mil a R$ 20 mil"
+    },
+    {
+      "ateKwhMes": 1000,
+      "kwp": "8,2 kWp",
+      "faixa": "R$ 25 mil a R$ 31 mil"
+    }
+  ],
+  "objecoes": {
+    "preco": "Entendo. O jeito certo de comparar é pela economia: o sistema costuma se pagar em poucos anos e depois a conta cai para perto da taxa mínima. Posso te mostrar a simulação com a sua conta e a opção de parcela que cabe no seu mês?",
+    "pensar": "Claro, é uma decisão importante. Para te ajudar a pensar com os números certos, posso te mandar a simulação com a sua conta real? Aí você decide com calma, sem compromisso.",
+    "concorrente": "Ótimo que você está comparando. Vale olhar marca das placas e do inversor, garantia de instalação e quem faz a homologação na distribuidora. Se me mandar o orçamento que recebeu, eu comparo item por item com você.",
+    "confianca": "Faz sentido querer segurança. Posso te passar contatos de clientes da sua região e agendar uma visita técnica sem custo para você conhecer a equipe antes de decidir.",
+    "financiamento": "Trabalhamos com financiamento solar em até 72 vezes. Com a média da sua conta eu já consigo te dizer uma parcela aproximada. Qual o valor médio da sua conta de luz?",
+    "telhado": "A visita técnica serve justamente para isso: avaliamos o telhado, a orientação e a estrutura. Se o telhado não for ideal, existem opções de estrutura no solo. Quer agendar?"
+  },
+  "perguntasDeQualificacao": [
+    "Qual o valor médio da sua conta de luz, ou o consumo em kWh do mês?",
+    "Em qual cidade é o imóvel?",
+    "O imóvel é casa, comércio ou rural?",
+    "O telhado é de telha cerâmica, fibrocimento ou laje?"
+  ],
+  "followUps": [
+    "Oi, {nome}! Conseguiu ver a simulação? Se ficou alguma dúvida, posso te explicar rapidinho por aqui.",
+    "{nome}, esta semana ainda tenho horário para visita técnica sem custo na sua região. Quer que eu reserve um horário para você?",
+    "{nome}, vou encerrar seu atendimento por aqui para não te incomodar. Se quiser retomar, é só responder esta mensagem."
+  ]
+}

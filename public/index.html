@@ -1,0 +1,124 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Assistente comercial</title>
+<style>
+:root{--bg:#f4f6f5;--card:#fff;--ink:#17201b;--muted:#5d6b63;--line:#dfe5e1;--acc:#128c5e;--acc2:#e9f6ef;--warn:#b25b00;--warn2:#fff4e5;--bad:#b3261e;--cli:#fff;--emp:#dcf8c6}
+*{box-sizing:border-box}body{margin:0;font:15px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--ink)}
+header{display:flex;flex-wrap:wrap;gap:8px 16px;align-items:center;padding:12px 16px;background:var(--card);border-bottom:1px solid var(--line);position:sticky;top:0;z-index:2}
+header h1{font-size:17px;margin:0}.pill{font-size:12px;padding:2px 8px;border-radius:99px;background:var(--acc2);color:var(--acc);white-space:nowrap}.pill.w{background:var(--warn2);color:var(--warn)}
+header .sp{flex:1}button{font:inherit;border:1px solid var(--line);background:var(--card);border-radius:8px;padding:6px 12px;cursor:pointer}button.p{background:var(--acc);border-color:var(--acc);color:#fff}button:disabled{opacity:.5;cursor:default}
+main{display:grid;grid-template-columns:minmax(240px,300px) minmax(0,1fr) minmax(250px,320px);gap:12px;padding:12px;max-width:1400px;margin:0 auto}
+section{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px;min-width:0}h2{font-size:14px;margin:0 0 8px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
+.lead{padding:8px;border-radius:8px;border:1px solid transparent;cursor:pointer;margin-bottom:4px}.lead:hover{background:var(--bg)}.lead.sel{border-color:var(--acc);background:var(--acc2)}
+.lead b{display:block}.lead small{color:var(--muted)}.tag{font-size:11px;padding:1px 6px;border-radius:99px;background:var(--bg);margin-right:4px}.tag.r{background:#fde8e7;color:var(--bad)}.tag.f{background:var(--warn2);color:var(--warn)}.tag.v{background:var(--acc2);color:var(--acc)}
+.etapa{font-size:12px;color:var(--muted);margin:10px 0 4px;font-weight:600}
+.chat{background:#efeae2;border-radius:10px;padding:10px;height:340px;overflow:auto;display:flex;flex-direction:column;gap:6px}
+.msg{max-width:80%;padding:6px 9px;border-radius:8px;white-space:pre-wrap;overflow-wrap:anywhere;box-shadow:0 1px 0 rgba(0,0,0,.06)}.msg.cliente{background:var(--cli);align-self:flex-start}.msg.empresa{background:var(--emp);align-self:flex-end}.msg small{display:block;color:var(--muted);font-size:11px;margin-top:2px}
+.sug{margin-top:10px;border:1px solid var(--acc);border-radius:10px;padding:10px;background:var(--acc2)}.sug textarea{width:100%;min-height:90px;font:inherit;border:1px solid var(--line);border-radius:8px;padding:8px}
+.meta{font-size:13px;color:var(--muted);margin:6px 0}.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:8px}.row input,.row select{font:inherit;border:1px solid var(--line);border-radius:8px;padding:6px 8px;min-width:0;flex:1}
+.item{font-size:14px;padding:6px 0;border-bottom:1px dashed var(--line)}.item:last-child{border:0}pre{white-space:pre-wrap;font:13px/1.45 inherit;background:var(--bg);padding:8px;border-radius:8px;margin:6px 0 0}
+.aviso{font-size:12px;color:var(--muted)}.vazio{color:var(--muted);font-size:14px}.erro{color:var(--bad);font-size:13px;min-height:1em}
+@media (max-width:1000px){main{grid-template-columns:1fr}.chat{height:300px}}
+</style>
+</head>
+<body>
+<header>
+  <h1 id="empresa">Assistente comercial</h1>
+  <span class="pill" id="ia"></span><span class="pill" id="envio"></span><span class="pill" id="modo"></span>
+  <span class="sp"></span>
+  <span class="aviso" id="relogio"></span>
+  <button id="avancar" title="Só na demonstração: simula a passagem do tempo para ver o follow-up">Avançar 24h</button>
+</header>
+<main>
+  <section>
+    <h2>Leads</h2>
+    <div id="leads"></div>
+    <div class="etapa">Novo lead (simulação)</div>
+    <div class="row"><input id="nNome" placeholder="Nome"><input id="nTel" placeholder="Telefone com DDD, ex. 5519..."></div>
+    <div class="row"><input id="nMsg" placeholder="Primeira mensagem do cliente"><button id="nEnviar">Chegou</button></div>
+  </section>
+  <section>
+    <h2 id="tituloConversa">Conversa</h2>
+    <div class="meta" id="info"></div>
+    <div class="chat" id="chat"><div class="vazio">Escolha um lead.</div></div>
+    <div id="sug"></div>
+    <div class="row" id="simRow" hidden>
+      <input id="simMsg" placeholder="Escreva como se fosse o cliente (simulação)">
+      <button id="simEnviar">Cliente envia</button>
+    </div>
+    <div class="row" id="etapaRow" hidden>
+      <label for="etapaSel" class="aviso">Etapa no CRM</label>
+      <select id="etapaSel"></select>
+    </div>
+    <div class="erro" id="erro"></div>
+  </section>
+  <section>
+    <h2>Hoje</h2>
+    <div id="tarefas"></div>
+    <h2 style="margin-top:14px">Agenda de visitas</h2>
+    <div id="visitas"></div>
+    <div class="aviso" style="margin-top:6px">O Google Agenda pode assinar <a href="/agenda.ics" id="ics">/agenda.ics</a> (Adicionar agenda &gt; Do URL).</div>
+    <h2 style="margin-top:14px">Resumo para o vendedor</h2>
+    <button id="resumo">Gerar resumo do dia</button>
+    <pre id="resumoTxt" hidden></pre>
+    <h2 style="margin-top:14px">Atividade</h2>
+    <div id="eventos"></div>
+    <p class="aviso" id="aviso"></p>
+  </section>
+</main>
+<script>
+const ETAPAS=['novo','conversando','proposta','visita','fechado','perdido'];
+const NOMES={novo:'Novo',conversando:'Em conversa',proposta:'Proposta',visita:'Visita marcada',fechado:'Fechado',perdido:'Perdido'};
+let E=null, sel=null, editando=false;
+const $=id=>document.getElementById(id);
+const el=(tag,attrs={},...kids)=>{const n=document.createElement(tag);for(const[k,v]of Object.entries(attrs)){if(k==='class')n.className=v;else if(k.startsWith('on'))n.addEventListener(k.slice(2),v);else n.setAttribute(k,v)}for(const k of kids)n.append(k instanceof Node?k:document.createTextNode(String(k)));return n};
+const hora=ms=>new Date(ms).toLocaleString('pt-BR',{timeZone:'America/Sao_Paulo',weekday:'short',day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'});
+async function api(p,b){$('erro').textContent='';const r=await fetch(p,b===undefined?{}:{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(b)});const j=await r.json();if(!r.ok){$('erro').textContent=j.erro||'Erro';throw new Error(j.erro)}return j}
+async function carregar(){E=await api('/api/estado');desenhar()}
+function desenhar(){
+  $('empresa').textContent='Assistente comercial · '+E.empresa;
+  $('ia').textContent=E.ia==='claude'?'IA: Claude':'IA: regras (sem chave)';
+  $('envio').textContent=E.enviador==='cloud-api'?'WhatsApp: Cloud API':'WhatsApp: simulado';
+  $('modo').textContent=E.modo==='automatico'?'envio automático':'vendedor aprova';
+  $('relogio').textContent='Agora: '+hora(E.agora);
+  $('avancar').hidden=!E.demo; $('aviso').textContent=E.aviso;
+  const L=$('leads');L.replaceChildren();
+  for(const et of ETAPAS){const ls=E.leads.filter(l=>l.etapa===et);if(!ls.length)continue;L.append(el('div',{class:'etapa'},NOMES[et]+' ('+ls.length+')'));
+    for(const l of ls){const tags=[];const ult=l.mensagens.at(-1);
+      if(ult&&ult.de==='cliente'&&l.etapa!=='perdido')tags.push(el('span',{class:'tag r'},'responder'));
+      if(E.sugestoes[l.id]?.intencao.startsWith('follow-up'))tags.push(el('span',{class:'tag f'},'follow-up'));
+      if(E.visitas.some(v=>v.leadId===l.id&&v.quando>E.agora))tags.push(el('span',{class:'tag v'},'visita'));
+      L.append(el('div',{class:'lead'+(sel===l.id?' sel':''),onclick:()=>{sel=l.id;editando=false;desenhar()}},el('b',{},l.nome||l.telefone),el('small',{},(ult?ult.texto.slice(0,60):'')),el('div',{},...tags)))}}
+  if(!E.leads.length)L.append(el('div',{class:'vazio'},'Nenhum lead ainda.'));
+  const l=E.leads.find(x=>x.id===sel);
+  $('simRow').hidden=!l||!E.demo;$('etapaRow').hidden=!l;
+  if(!l){$('tituloConversa').textContent='Conversa';$('info').textContent='';$('chat').replaceChildren(el('div',{class:'vazio'},'Escolha um lead.'));$('sug').replaceChildren()}
+  else{
+    $('tituloConversa').textContent=l.nome||l.telefone;
+    $('info').textContent=`${l.telefone} · ${NOMES[l.etapa]} · consumo ${l.consumoKwh?l.consumoKwh+' kWh/mês':'?'} · cidade ${l.cidade||'?'} · ${l.janela24h?'dentro da janela de 24h':'fora da janela de 24h (só modelo aprovado)'}`;
+    const C=$('chat');C.replaceChildren(...l.mensagens.map(m=>el('div',{class:'msg '+m.de},m.texto,el('small',{},hora(m.em)+(m.enviadaPor?' · '+m.enviadaPor:'')))));C.scrollTop=C.scrollHeight;
+    const s=E.sugestoes[l.id];const S=$('sug');
+    if(!s){S.replaceChildren()}else if(!editando){
+      const ta=el('textarea',{id:'sugTxt'});ta.value=s.resposta;ta.addEventListener('input',()=>{editando=true});
+      S.replaceChildren(el('div',{class:'sug'},el('div',{class:'meta'},`Sugestão (${s.fonte==='claude'?'Claude':'regras'}) · ${s.intencao}${s.objecao?' · objeção: '+s.objecao:''}`),ta,
+        el('div',{class:'meta'},'Próxima ação: '+s.proximaAcao+(s.novaEtapa?' · etapa → '+NOMES[s.novaEtapa]:'')+(s.visita?' · agenda: '+hora(s.visita.quando):'')),
+        el('div',{class:'row'},el('button',{class:'p',onclick:async()=>{editando=false;E=await api('/api/leads/'+l.id+'/aprovar',{texto:$('sugTxt').value});desenhar()}},'Enviar'),el('button',{onclick:async()=>{editando=false;E=await api('/api/leads/'+l.id+'/descartar',{});desenhar()}},'Descartar'))))}
+    const es=$('etapaSel');es.replaceChildren(...ETAPAS.map(e=>{const o=el('option',{value:e},NOMES[e]);if(e===l.etapa)o.selected=true;return o}));
+  }
+  const T=$('tarefas');T.replaceChildren(...(E.tarefas.length?E.tarefas.map(t=>el('div',{class:'item'},(t.tipo==='responder'?'💬 ':t.tipo==='visita'?'📍 ':'🔁 ')+t.texto)):[el('div',{class:'vazio'},'Nada pendente.')]));
+  const V=$('visitas');const fut=E.visitas.filter(v=>v.quando>E.agora-3600e3);V.replaceChildren(...(fut.length?fut.map(v=>el('div',{class:'item'},hora(v.quando)+' · '+v.titulo)):[el('div',{class:'vazio'},'Nenhuma visita marcada.')]));
+  $('eventos').replaceChildren(...E.eventos.slice(0,8).map(e=>el('div',{class:'item aviso'},hora(e.em)+' · '+e.texto)));
+}
+$('etapaSel').addEventListener('change',async e=>{E=await api('/api/leads/'+sel+'/etapa',{etapa:e.target.value});desenhar()});
+$('simEnviar').addEventListener('click',async()=>{const l=E.leads.find(x=>x.id===sel);const t=$('simMsg').value.trim();if(!l||!t)return;editando=false;E=await api('/api/simular',{telefone:l.telefone,nome:l.nome,texto:t});$('simMsg').value='';desenhar()});
+$('simMsg').addEventListener('keydown',e=>{if(e.key==='Enter')$('simEnviar').click()});
+$('nEnviar').addEventListener('click',async()=>{const tel=$('nTel').value.replace(/\D/g,''),t=$('nMsg').value.trim();if(tel.length<10||!t){$('erro').textContent='Informe telefone com DDD e a mensagem.';return}E=await api('/api/simular',{telefone:tel,nome:$('nNome').value.trim(),texto:t});sel=E.leads.find(x=>x.telefone===tel)?.id??null;['nNome','nTel','nMsg'].forEach(i=>$(i).value='');desenhar()});
+$('avancar').addEventListener('click',async()=>{editando=false;E=await api('/api/relogio',{horas:24});desenhar()});
+$('resumo').addEventListener('click',async()=>{const r=await api('/api/resumo');$('resumoTxt').hidden=false;$('resumoTxt').textContent=r.texto});
+carregar();setInterval(()=>{if(!editando&&document.activeElement?.tagName!=='INPUT')carregar().catch(()=>{})},5000);
+</script>
+</body>
+</html>

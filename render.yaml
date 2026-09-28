@@ -1,0 +1,13 @@
+services:
+  - type: web
+    name: assistente-comercial-demo
+    runtime: node
+    plan: free
+    buildCommand: npm ci && npm run build
+    startCommand: npm start
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_VERSION
+        value: 22.22.2
+      - key: DEMO
+        value: "1"

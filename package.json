@@ -1,0 +1,23 @@
+{
+  "name": "assistente-comercial",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Assistente de vendas para leads de WhatsApp: sugere respostas, cuida do follow-up, agenda visitas e resume o dia do vendedor.",
+  "license": "MIT",
+  "type": "module",
+  "engines": {
+    "node": ">=20.18.3"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "start": "node dist/server.js",
+    "dev": "tsc -p tsconfig.json && node dist/server.js",
+    "check": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run"
+  },
+  "devDependencies": {
+    "@types/node": "22.20.4",
+    "typescript": "5.9.3",
+    "vitest": "3.2.7"
+  }
+}
