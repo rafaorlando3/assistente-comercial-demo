@@ -5,7 +5,7 @@ import type { Enviador, Recebida } from './whatsapp.js';
 import { sugerirPorRegras } from './regras.js';
 import { sugerirPorClaude, type ConfigClaude } from './claude.js';
 import { dentroDaJanela24h, followUpsDevidos, PADRAO, resumoDoDia, tarefas, type ConfigFollowUp } from './crm.js';
-import { primeiroNome } from './texto.js';
+import { contarHorarios, primeiroNome, recusaOuRemarcacao } from './texto.js';
 
 export type Config = {
   modo: 'sugerir' | 'automatico';
@@ -18,6 +18,13 @@ export type Config = {
 export type Evento = { em: number; tipo: string; texto: string };
 export const ETAPAS: Etapa[] = ['novo', 'conversando', 'proposta', 'visita', 'fechado', 'perdido'];
 
+/** A sugestão aprovada não é mais a atual (chegou mensagem nova, ou já foi enviada). Nada foi enviado. */
+export class SugestaoDesatualizada extends Error {
+  constructor() {
+    super('A sugestão mudou (chegou mensagem nova ou ela já foi enviada). Nada foi enviado; revise a sugestão atual.');
+  }
+}
+
 export class Assistente {
   readonly leads = new Map<string, Lead>();
   readonly sugestoes = new Map<string, Sugestao>();
@@ -25,6 +32,8 @@ export class Assistente {
   readonly eventos: Evento[] = [];
   private vistos = new Set<string>();
   private geracao = new Map<string, number>();
+  private versao = 0;
+  private filas = new Map<string, Promise<unknown>>();
 
   constructor(
     readonly kb: BaseConhecimento,
@@ -36,6 +45,26 @@ export class Assistente {
   private evento(tipo: string, texto: string) {
     this.eventos.push({ em: this.relogio(), tipo, texto });
     if (this.eventos.length > 200) this.eventos.shift();
+  }
+
+  /** Uma operação de envio por lead de cada vez (aprovação e follow-up), na ordem de chegada. */
+  private serial<T>(leadId: string, fn: () => Promise<T>): Promise<T> {
+    const run = (this.filas.get(leadId) ?? Promise.resolve()).then(fn);
+    const cauda = run.then(
+      () => {},
+      () => {},
+    );
+    this.filas.set(leadId, cauda);
+    void cauda.then(() => {
+      if (this.filas.get(leadId) === cauda) this.filas.delete(leadId);
+    });
+    return run;
+  }
+
+  private guardar(s: Omit<Sugestao, 'versao'>): Sugestao {
+    const v: Sugestao = { ...s, versao: ++this.versao };
+    this.sugestoes.set(s.leadId, v);
+    return v;
   }
 
   lead(id: string): Lead | undefined {
@@ -68,8 +97,11 @@ export class Assistente {
       this.evento('lead', `Novo lead: ${r.nome || r.telefone}`);
     }
     if (!lead.nome && r.nome) lead.nome = r.nome;
-    lead.mensagens.push({ id: r.id, de: 'cliente', texto: r.texto, em: agora });
-    lead.ultimaDoCliente = agora;
+    // A janela de 24h conta da hora da mensagem do cliente, não da hora em que o webhook chegou.
+    // Entrega atrasada não reabre a janela; hora futura é limitada a agora; hora inválida (0) não abre janela.
+    const hora = r.em > 0 ? Math.min(r.em, agora) : null;
+    lead.mensagens.push({ id: r.id, de: 'cliente', texto: r.texto, em: hora ?? agora });
+    if (hora !== null) lead.ultimaDoCliente = Math.max(lead.ultimaDoCliente ?? 0, hora);
     lead.followUps = 0;
     if (lead.etapa === 'perdido' && !/\b(parar|sair|remov)/i.test(r.texto)) {
       lead.etapa = 'conversando';
@@ -79,11 +111,11 @@ export class Assistente {
     return 'ok';
   }
 
-  async gerarSugestao(lead: Lead): Promise<Sugestao> {
+  async gerarSugestao(lead: Lead): Promise<Sugestao | null> {
     const n = (this.geracao.get(lead.id) ?? 0) + 1;
     this.geracao.set(lead.id, n);
     const agora = this.relogio();
-    let s: Sugestao;
+    let s: Omit<Sugestao, 'versao'>;
     if (this.cfg.claude) {
       try {
         s = await sugerirPorClaude(lead, this.kb, agora, this.cfg.claude);
@@ -92,43 +124,61 @@ export class Assistente {
         s = sugerirPorRegras(lead, this.kb, agora);
       }
     } else s = sugerirPorRegras(lead, this.kb, agora);
-    if (this.geracao.get(lead.id) !== n) return s; // chegou mensagem mais nova: descarta esta sugestão
+    // Guarda comum às duas fontes: negativa, remarcação ou mais de um horário nunca marcam visita.
+    const ultima = [...lead.mensagens].reverse().find(m => m.de === 'cliente')?.texto ?? '';
+    if (s.visita && (recusaOuRemarcacao(ultima) || contarHorarios(ultima) > 1))
+      s = {
+        ...s,
+        visita: null,
+        novaEtapa: s.novaEtapa === 'visita' ? null : s.novaEtapa,
+        proximaAcao: 'Combinar um dia e horário antes de marcar a visita.',
+      };
+    if (this.geracao.get(lead.id) !== n) return null; // chegou mensagem mais nova: esta sugestão é descartada
     if (s.dados.consumoKwh) lead.consumoKwh = s.dados.consumoKwh;
     if (s.dados.cidade) lead.cidade = s.dados.cidade;
     if (s.dados.nome && !lead.nome) lead.nome = s.dados.nome;
-    this.sugestoes.set(lead.id, s);
-    if (this.cfg.modo === 'automatico') await this.aprovar(lead.id);
-    return s;
+    const guardada = this.guardar(s);
+    if (this.cfg.modo === 'automatico')
+      await this.aprovar(lead.id, { versao: guardada.versao }).catch(e => this.evento('envio', (e as Error).message));
+    return guardada;
   }
 
-  /** Vendedor aprova a sugestão (pode editar o texto antes). Aplica etapa e visita só depois do envio. */
-  async aprovar(leadId: string, textoEditado?: string): Promise<void> {
-    const lead = this.lead(leadId);
+  /**
+   * O vendedor aprova a versão da sugestão que viu (pode editar o texto). Se ela não é mais a atual, nada é
+   * enviado. Etapa e visita vêm só da versão aprovada e só depois do envio.
+   */
+  aprovar(leadId: string, o: { versao: number; texto?: string }): Promise<void> {
+    return this.serial(leadId, async () => {
+      const lead = this.lead(leadId);
+      const s = this.sugestoes.get(leadId);
+      if (!lead || !s || s.versao !== o.versao) throw new SugestaoDesatualizada();
+      if (s.intencao.startsWith('follow-up')) return this.followUpAgora(lead, s, o.texto);
+      const texto = (o.texto ?? s.resposta).trim();
+      if (!texto) throw new Error('Mensagem vazia.');
+      await this.enviar(lead, texto, this.cfg.modo === 'automatico' ? 'assistente-automatico' : 'vendedor');
+      if (this.sugestoes.get(leadId)?.versao === s.versao) this.sugestoes.delete(leadId);
+      if (s.novaEtapa && s.novaEtapa !== lead.etapa) this.mudarEtapa(leadId, s.novaEtapa);
+      if (s.visita) {
+        const v: Visita = { id: randomUUID().slice(0, 8), leadId, quando: s.visita.quando, titulo: s.visita.texto, criadaEm: this.relogio() };
+        this.visitas.push(v);
+        this.evento('agenda', `${v.titulo}`);
+      }
+    });
+  }
+
+  descartar(leadId: string, versao: number) {
     const s = this.sugestoes.get(leadId);
-    if (!lead || !s) throw new Error('Não há sugestão pendente para este lead.');
-    if (s.intencao.startsWith('follow-up')) return this.enviarFollowUp(leadId, textoEditado);
-    const texto = (textoEditado ?? s.resposta).trim();
-    if (!texto) throw new Error('Mensagem vazia.');
-    await this.enviar(lead, texto, this.cfg.modo === 'automatico' ? 'assistente-automatico' : 'vendedor');
-    this.sugestoes.delete(leadId);
-    if (s.novaEtapa && s.novaEtapa !== lead.etapa) this.mudarEtapa(leadId, s.novaEtapa);
-    if (s.visita) {
-      const v: Visita = { id: randomUUID().slice(0, 8), leadId, quando: s.visita.quando, titulo: s.visita.texto, criadaEm: this.relogio() };
-      this.visitas.push(v);
-      this.evento('agenda', `${v.titulo}`);
-    }
-  }
-
-  descartar(leadId: string) {
+    if (!s || s.versao !== versao) throw new SugestaoDesatualizada();
     this.sugestoes.delete(leadId);
   }
 
-  async enviar(lead: Lead, texto: string, por: 'vendedor' | 'assistente-automatico' | 'follow-up'): Promise<void> {
+  private async enviar(lead: Lead, texto: string, por: 'vendedor' | 'assistente-automatico' | 'follow-up'): Promise<void> {
     const agora = this.relogio();
     if (!dentroDaJanela24h(lead, agora))
       throw new Error('Fora da janela de 24h do WhatsApp: só é possível enviar um modelo aprovado. Use o follow-up.');
     const id = await this.enviador.texto(lead.telefone, texto);
-    lead.mensagens.push({ id: id || randomUUID(), de: 'empresa', texto, em: agora, enviadaPor: por });
+    if (!id) throw new Error('O envio não devolveu identificador: resultado desconhecido. Confira no WhatsApp antes de reenviar.');
+    lead.mensagens.push({ id, de: 'empresa', texto, em: agora, enviadaPor: por });
     lead.ultimaDaEmpresa = agora;
   }
 
@@ -145,50 +195,55 @@ export class Assistente {
     const agora = this.relogio();
     let feitos = 0;
     for (const f of followUpsDevidos([...this.leads.values()], this.kb, agora, this.cfg.followUp ?? PADRAO)) {
-      if (this.cfg.modo === 'sugerir') {
-        const atual = this.sugestoes.get(f.lead.id);
-        if (atual?.intencao.startsWith('follow-up')) continue;
-        this.sugestoes.set(f.lead.id, {
-          leadId: f.lead.id,
-          resposta: f.texto,
-          intencao: `follow-up ${f.numero}${f.exigeModelo ? ' (modelo aprovado)' : ''}`,
-          objecao: null,
-          proximaAcao: f.exigeModelo ? 'Fora das 24h: sai pelo modelo aprovado na Meta.' : 'Enviar o follow-up.',
-          novaEtapa: null,
-          visita: null,
-          dados: {},
-          fonte: 'regras',
-          criadaEm: agora,
-        });
-        continue;
+      if (this.sugestoes.get(f.lead.id)?.intencao.startsWith('follow-up')) continue;
+      const s = this.guardar({
+        leadId: f.lead.id,
+        resposta: f.texto,
+        intencao: `follow-up ${f.numero}${f.exigeModelo ? ' (modelo aprovado)' : ''}`,
+        objecao: null,
+        proximaAcao: f.exigeModelo
+          ? 'Fora das 24h a Meta só aceita um modelo aprovado. O texto não pode ser editado (na demonstração, o envio do modelo é simulado).'
+          : 'Enviar o follow-up.',
+        novaEtapa: null,
+        visita: null,
+        dados: {},
+        fonte: 'regras',
+        criadaEm: agora,
+      });
+      if (this.cfg.modo === 'automatico') {
+        await this.aprovar(f.lead.id, { versao: s.versao }).then(
+          () => feitos++,
+          e => this.evento('envio', (e as Error).message),
+        );
       }
-      await this.enviarFollowUp(f.lead.id);
-      feitos++;
     }
     return feitos;
   }
 
-  /** Fora da janela de 24h sai o modelo aprovado (texto editado não se aplica); dentro dela, texto livre. */
-  async enviarFollowUp(leadId: string, textoEditado?: string): Promise<void> {
-    const lead = this.lead(leadId);
-    if (!lead) throw new Error('Lead não encontrado.');
+  /** Envia o follow-up da sugestão aprovada. Fora da janela de 24h sai o modelo; texto editado não se aplica. */
+  private async followUpAgora(lead: Lead, s: Sugestao, textoEditado?: string): Promise<void> {
     const agora = this.relogio();
     const f = followUpsDevidos([lead], this.kb, agora, this.cfg.followUp ?? PADRAO)[0];
-    if (!f) throw new Error('Nenhum follow-up devido para este lead agora.');
+    if (!f) {
+      if (this.sugestoes.get(lead.id)?.versao === s.versao) this.sugestoes.delete(lead.id);
+      throw new SugestaoDesatualizada();
+    }
     let id: string;
     let texto: string;
     if (f.exigeModelo) {
       const m = this.cfg.modeloForaDaJanela ?? { nome: 'retomada_atendimento', idioma: 'pt_BR' };
-      id = await this.enviador.modelo(lead.telefone, m.nome, m.idioma, [primeiroNome(lead.nome) || 'tudo bem']);
-      texto = `[modelo aprovado "${m.nome}"] ${f.texto}`;
+      const parametro = primeiroNome(lead.nome) || 'tudo bem';
+      id = await this.enviador.modelo(lead.telefone, m.nome, m.idioma, [parametro]);
+      texto = `Modelo aprovado "${m.nome}" (parâmetro: ${parametro}). O texto entregue é o cadastrado na Meta.`;
     } else {
       texto = textoEditado?.trim() || f.texto;
       id = await this.enviador.texto(lead.telefone, texto);
     }
-    lead.mensagens.push({ id: id || randomUUID(), de: 'empresa', texto, em: agora, enviadaPor: 'follow-up' });
+    if (!id) throw new Error('O envio não devolveu identificador: resultado desconhecido. Confira no WhatsApp antes de reenviar.');
+    lead.mensagens.push({ id, de: 'empresa', texto, em: agora, enviadaPor: 'follow-up' });
     lead.ultimaDaEmpresa = agora;
     lead.followUps = f.numero;
-    this.sugestoes.delete(leadId);
+    if (this.sugestoes.get(lead.id)?.versao === s.versao) this.sugestoes.delete(lead.id);
     this.evento('follow-up', `${f.numero}º follow-up para ${lead.nome || lead.telefone}${f.exigeModelo ? ' (modelo)' : ''}`);
   }
 

@@ -1,6 +1,6 @@
 // Sugestão pelo Claude (API de Mensagens da Anthropic), com saída em JSON validada.
 // Qualquer falha (sem chave, rede, tempo, formato) volta para as regras: o atendimento nunca para.
-import type { BaseConhecimento, Etapa, Lead, Objecao, Sugestao } from './types.js';
+import type { BaseConhecimento, Etapa, Lead, Objecao, Sugestao, SugestaoBase } from './types.js';
 import { formatarQuando } from './texto.js';
 
 export type ConfigClaude = { apiKey: string; model: string; timeoutMs?: number; fetchImpl?: typeof fetch };
@@ -46,7 +46,7 @@ function objeto(texto: string): unknown {
 }
 
 /** Valida e normaliza a saída do modelo. Lança erro se o essencial estiver errado. */
-export function validarSaida(bruto: unknown, lead: Lead, agora: number): Sugestao {
+export function validarSaida(bruto: unknown, lead: Lead, agora: number): SugestaoBase {
   if (!bruto || typeof bruto !== 'object') throw new Error('saída não é objeto');
   const o = bruto as Record<string, unknown>;
   const resposta = typeof o.resposta === 'string' ? o.resposta.trim() : '';
@@ -79,7 +79,7 @@ export function validarSaida(bruto: unknown, lead: Lead, agora: number): Sugesta
   };
 }
 
-export async function sugerirPorClaude(lead: Lead, kb: BaseConhecimento, agora: number, cfg: ConfigClaude): Promise<Sugestao> {
+export async function sugerirPorClaude(lead: Lead, kb: BaseConhecimento, agora: number, cfg: ConfigClaude): Promise<SugestaoBase> {
   const f = cfg.fetchImpl ?? fetch;
   const r = await f('https://api.anthropic.com/v1/messages', {
     method: 'POST',

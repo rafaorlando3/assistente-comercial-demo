@@ -61,6 +61,19 @@ export function cidadeMencionada(texto: string): string | null {
   return m ? m[1]!.trim() : null;
 }
 
+/** Negativa, cancelamento ou pedido para remarcar: um horário citado aqui NÃO é aceite de visita. */
+export function recusaOuRemarcacao(texto: string): boolean {
+  return /\b(nao (posso|da|consigo|vai dar|tenho como|vou poder|estarei|vou estar|fica bom|serve)|impossivel|cancel\w*|desmarc\w*|remarc\w*|adiar|outro (dia|horario)|nao,)/.test(
+    normalizar(texto),
+  );
+}
+
+const RE_HORA = /\b(?:as\s+|a\s+)?(\d{1,2})(?:\s*h\s*(\d{2})?|:(\d{2})|\s+horas?)\b/g;
+/** Quantos horários o texto cita ("amanhã às 10h ou sábado às 9h" = 2). Mais de um é ambíguo. */
+export function contarHorarios(texto: string): number {
+  return [...normalizar(texto).matchAll(RE_HORA)].length;
+}
+
 const DIAS: Record<string, number> = { domingo: 0, segunda: 1, terca: 2, quarta: 3, quinta: 4, sexta: 5, sabado: 6 };
 
 /** Partes da data no horário de Brasília. */
@@ -114,6 +127,12 @@ export function extrairVisita(texto: string, agora: number): number | null {
   }
   if (!alvo) return null;
   const quando = msBR(alvo.ano, alvo.mes, alvo.dia, hora, minuto);
+  // Data com dia e mês explícitos precisa existir no calendário: 31/02 não vira 03/03.
+  if (data) {
+    const real = partesBR(quando);
+    const mesEsperado = ((alvo.mes % 12) + 12) % 12;
+    if (real.dia !== alvo.dia || real.mes !== mesEsperado) return null;
+  }
   return quando > agora ? quando : null;
 }
 

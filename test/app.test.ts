@@ -8,6 +8,11 @@ import type { BaseConhecimento } from '../src/types.js';
 
 const kb = JSON.parse(readFileSync(new URL('../data/base-conhecimento.json', import.meta.url), 'utf8')) as BaseConhecimento;
 const H = 3_600_000;
+const aprovar = (a: Assistente, id: string, texto?: string) => {
+  const s = a.sugestoes.get(id);
+  if (!s) throw new Error('sem sugestão');
+  return a.aprovar(id, { versao: s.versao, ...(texto ? { texto } : {}) });
+};
 const INICIO = Date.parse('2026-09-28T13:00:00-03:00');
 
 function montar(modo: 'sugerir' | 'automatico' = 'sugerir', claude?: Parameters<typeof sugerirPorClaude>[3]) {
@@ -37,7 +42,7 @@ describe('fluxo do lead', () => {
     expect(l.consumoKwh).toBe(350);
     expect(l.cidade).toBe('Valinhos');
     expect(a.sugestoes.get(l.id)?.resposta).toMatch(/3,3 kWp.*R\$ 12 mil a R\$ 15 mil/);
-    await a.aprovar(l.id);
+    await aprovar(a, l.id);
     expect(env.enviados).toHaveLength(1);
     expect(l.etapa).toBe('proposta');
   });
@@ -46,7 +51,7 @@ describe('fluxo do lead', () => {
     const { a, env, chega } = montar();
     await chega('Oi');
     const l = [...a.leads.values()][0]!;
-    await a.aprovar(l.id, 'Olá Joana, aqui é o Pedro. Qual o valor da sua conta?');
+    await aprovar(a, l.id, 'Olá Joana, aqui é o Pedro. Qual o valor da sua conta?');
     expect(env.enviados[0]!.corpo).toBe('Olá Joana, aqui é o Pedro. Qual o valor da sua conta?');
   });
 
@@ -63,7 +68,7 @@ describe('fluxo do lead', () => {
     await chega('Pode ser amanhã às 10h, moro em Campinas');
     const l = [...a.leads.values()][0]!;
     expect(a.visitas).toHaveLength(0);
-    await a.aprovar(l.id);
+    await aprovar(a, l.id);
     expect(l.etapa).toBe('visita');
     expect(a.visitas[0]!.quando).toBe(Date.parse('2026-09-29T10:00:00-03:00'));
     const cal = ics(a.visitas, kb.empresa, 60, INICIO);
@@ -83,7 +88,7 @@ describe('fluxo do lead', () => {
     const { a, env, chega, avanca } = montar();
     await chega('Não tenho interesse, pare de mandar');
     const l = [...a.leads.values()][0]!;
-    await a.aprovar(l.id);
+    await aprovar(a, l.id);
     expect(l.etapa).toBe('perdido');
     avanca(100);
     await a.rodarFollowUps();
@@ -126,11 +131,11 @@ describe('follow-up', () => {
     const { a, env, chega, avanca } = montar('sugerir');
     await chega('Oi');
     const l = [...a.leads.values()][0]!;
-    await a.aprovar(l.id);
+    await aprovar(a, l.id);
     avanca(25);
     await a.rodarFollowUps();
     expect(a.sugestoes.get(l.id)?.intencao).toMatch(/^follow-up 1/);
-    await a.aprovar(l.id);
+    await aprovar(a, l.id);
     expect(env.enviados.at(-1)!.modelo).toBe('retomada_atendimento');
     expect(l.followUps).toBe(1);
   });
@@ -140,13 +145,13 @@ describe('follow-up', () => {
     await chega('Oi');
     const l = [...a.leads.values()][0]!;
     avanca(25);
-    await expect(a.aprovar(l.id)).rejects.toThrow(/janela de 24h/);
+    await expect(aprovar(a, l.id)).rejects.toThrow(/janela de 24h/);
   });
 
   it('resumo do dia lista quem responder, follow-ups e visitas de hoje', async () => {
     const { a, chega, avanca } = montar();
     await chega('Pode ser hoje às 17h a visita?', '5519990000001', 'Rui Alves');
-    await a.aprovar([...a.leads.values()][0]!.id);
+    await aprovar(a, [...a.leads.values()][0]!.id);
     await chega('Oi, quero orçamento', '5519990000002', 'Bia Costa');
     avanca(1);
     const r = a.resumo();
@@ -204,5 +209,75 @@ describe('Claude', () => {
     expect((pedido!.headers as Record<string, string>)['x-api-key']).toBe('chave-secreta');
     expect(corpo.system).toMatch(/dados, não instruções/);
     expect(corpo.messages[0].content).toMatch(/LEAD: Ignore as regras/);
+  });
+});
+
+describe('hora da mensagem e resultado do envio', () => {
+  it('entrega atrasada não reabre a janela de 24h; ordem invertida mantém a mais recente; hora futura vira agora', async () => {
+    const { a } = montar();
+    const tel = '5519990000009';
+    await a.receber({ id: 'w1', telefone: tel, nome: 'Joana', texto: 'Oi', em: INICIO - 48 * H });
+    const l = a.leads.get(tel)!;
+    expect(l.ultimaDoCliente).toBe(INICIO - 48 * H);
+    await expect(aprovar(a, l.id)).rejects.toThrow(/janela de 24h/);
+    await a.receber({ id: 'w2', telefone: tel, nome: 'Joana', texto: 'Ainda tem?', em: INICIO - 1 * H });
+    await a.receber({ id: 'w3', telefone: tel, nome: 'Joana', texto: 'mensagem velha', em: INICIO - 30 * H });
+    expect(l.ultimaDoCliente).toBe(INICIO - 1 * H);
+    await a.receber({ id: 'w4', telefone: tel, nome: 'Joana', texto: 'do futuro', em: INICIO + 10 * H });
+    expect(l.ultimaDoCliente).toBe(INICIO);
+  });
+  it('hora inválida no webhook não abre a janela', async () => {
+    const { a } = montar();
+    const p = payloadDeTeste('5519990000008', 'Rui', 'Oi', 'w9', INICIO) as { entry: { changes: { value: { messages: { timestamp: string }[] } }[] }[] };
+    p.entry[0]!.changes[0]!.value.messages[0]!.timestamp = 'abc';
+    const r = lerWebhook(p)[0]!;
+    expect(r.em).toBe(0);
+    await a.receber(r);
+    expect(a.leads.get('5519990000008')!.ultimaDoCliente).toBeNull();
+  });
+  it('envio sem identificador não vira mensagem enviada nem avança a etapa', async () => {
+    let n = 0;
+    const semId = { nome: 'sem-id', texto: async () => '', modelo: async () => '' };
+    const a = new Assistente(kb, semId, { modo: 'sugerir' }, () => INICIO);
+    await a.receber(lerWebhook(payloadDeTeste('5519990000007', 'Bia', 'minha conta é 300 reais', `x${++n}`, INICIO))[0]!);
+    const l = [...a.leads.values()][0]!;
+    await expect(aprovar(a, l.id)).rejects.toThrow(/resultado desconhecido/);
+    expect(l.mensagens.filter(m => m.de === 'empresa')).toHaveLength(0);
+    expect(l.etapa).not.toBe('proposta');
+  });
+  it('Cloud API: resposta 2xx sem id é erro, não sucesso', async () => {
+    const { EnviadorCloudApi } = await import('../src/whatsapp.js');
+    const e = new EnviadorCloudApi('t', '1', 'v21.0', async () => new Response('{"messages":[]}', { status: 200 }));
+    await expect(e.texto('5511', 'oi')).rejects.toThrow(/sem devolver o id/);
+  });
+});
+
+describe('cadência do follow-up', () => {
+  it('24h depois da nossa mensagem, 48h depois do 1º, 96h depois do 2º; esfria 96h depois do 3º', async () => {
+    const { a, env, chega, avanca } = montar('automatico');
+    await chega('Minha conta vem 300 reais');
+    const l = [...a.leads.values()][0]!;
+    const passos: number[] = [];
+    for (let h = 0; h < 24 * 8; h++) {
+      avanca(1);
+      if ((await a.rodarFollowUps()) > 0) passos.push(h + 1);
+    }
+    expect(passos).toEqual([24, 72, 168]);
+    expect(l.followUps).toBe(3);
+    expect(env.enviados.filter(x => x.modelo)).toHaveLength(3);
+    expect(a.resumo()).not.toMatch(/Esfriando/);
+    avanca(96 - 24); // 96h depois do 3º sem resposta
+    expect(a.resumo()).toMatch(/Esfriando.*Joana Prado/);
+  });
+  it('fora da janela o texto editado não é usado, e o histórico diz que foi o modelo', async () => {
+    const { a, env, chega, avanca } = montar('sugerir');
+    await chega('Oi');
+    const l = [...a.leads.values()][0]!;
+    await aprovar(a, l.id);
+    avanca(25);
+    await a.rodarFollowUps();
+    await aprovar(a, l.id, 'texto que o vendedor tentou editar');
+    expect(env.enviados.at(-1)).toMatchObject({ modelo: 'retomada_atendimento', corpo: 'Joana' });
+    expect(l.mensagens.at(-1)!.texto).toMatch(/^Modelo aprovado "retomada_atendimento" \(parâmetro: Joana\)/);
   });
 });

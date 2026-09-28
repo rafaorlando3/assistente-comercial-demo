@@ -64,7 +64,7 @@ export function lerWebhook(corpo: unknown): Recebida[] {
           telefone: m.from.replace(/\D/g, ''),
           nome: nomes.get(m.from) ?? '',
           texto: texto.slice(0, 4096),
-          em: Number.isFinite(ts) && ts > 0 ? ts * 1000 : Date.now(),
+          em: Number.isFinite(ts) && ts > 0 ? ts * 1000 : 0, // 0 = hora desconhecida: não abre a janela de 24h
         });
       }
     }
@@ -132,7 +132,9 @@ export class EnviadorCloudApi implements Enviador {
     });
     const j = (await r.json().catch(() => ({}))) as { messages?: { id?: string }[]; error?: { message?: string; code?: number } };
     if (!r.ok) throw new Error(`WhatsApp HTTP ${r.status}${j.error?.code ? ` código ${j.error.code}` : ''}`);
-    return j.messages?.[0]?.id ?? '';
+    const id = j.messages?.[0]?.id;
+    if (!id) throw new Error('WhatsApp aceitou sem devolver o id da mensagem: resultado desconhecido, não reenviar sem conferir.');
+    return id;
   }
   texto(telefone: string, corpo: string) {
     return this.post({ to: telefone, type: 'text', text: { body: corpo, preview_url: false } });

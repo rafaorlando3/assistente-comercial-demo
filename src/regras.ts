@@ -1,22 +1,24 @@
 // Sugestão de resposta por regras: funciona sem chave de IA e serve de rede de segurança
 // quando o Claude não responde ou devolve algo fora do formato.
-import type { BaseConhecimento, Lead, Sugestao } from './types.js';
+import type { BaseConhecimento, Lead, SugestaoBase } from './types.js';
 import {
   cidadeMencionada,
   detectarObjecao,
   extrairCidade,
   extrairConsumo,
+  contarHorarios,
   extrairVisita,
   formatarQuando,
   pediuParaSair,
   primeiroNome,
+  recusaOuRemarcacao,
 } from './texto.js';
 
 export function faixaPara(kb: BaseConhecimento, kwh: number) {
   return kb.faixasDePreco.find(f => kwh <= f.ateKwhMes) ?? null;
 }
 
-export function sugerirPorRegras(lead: Lead, kb: BaseConhecimento, agora: number): Sugestao {
+export function sugerirPorRegras(lead: Lead, kb: BaseConhecimento, agora: number): SugestaoBase {
   const ultima = [...lead.mensagens].reverse().find(m => m.de === 'cliente');
   const texto = ultima?.texto ?? '';
   const nome = primeiroNome(lead.nome);
@@ -50,6 +52,19 @@ export function sugerirPorRegras(lead: Lead, kb: BaseConhecimento, agora: number
     };
 
   const quando = extrairVisita(texto, agora);
+  if (quando !== null && (recusaOuRemarcacao(texto) || contarHorarios(texto) > 1)) {
+    const recusa = recusaOuRemarcacao(texto);
+    return {
+      ...base,
+      dados,
+      resposta: recusa
+        ? `Sem problema${nome ? `, ${nome}` : ''}. Qual dia e horário ficam melhores para você? A visita técnica é sem custo e leva cerca de uma hora.`
+        : `${ola}para eu reservar certinho, pode me confirmar um único dia e horário?`,
+      intencao: recusa ? 'recusou ou quer remarcar' : 'horário ambíguo',
+      proximaAcao: 'Combinar um dia e horário antes de marcar a visita.',
+      novaEtapa: null,
+    };
+  }
   if (quando !== null) {
     const onde = cidadeLead ? ` em ${cidadeLead}` : '';
     return {

@@ -37,7 +37,10 @@ export type Sugestao = {
   dados: { consumoKwh?: number; cidade?: string; nome?: string };
   fonte: 'claude' | 'regras';
   criadaEm: number;
+  /** Identifica a versão que o vendedor viu; a aprovação precisa citar a versão atual. */
+  versao: number;
 };
+export type SugestaoBase = Omit<Sugestao, 'versao'>;
 
 export type Visita = {
   id: string;

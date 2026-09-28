@@ -20,6 +20,7 @@ section{background:var(--card);border:1px solid var(--line);border-radius:12px;p
 .sug{margin-top:10px;border:1px solid var(--acc);border-radius:10px;padding:10px;background:var(--acc2)}.sug textarea{width:100%;min-height:90px;font:inherit;border:1px solid var(--line);border-radius:8px;padding:8px}
 .meta{font-size:13px;color:var(--muted);margin:6px 0}.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:8px}.row input,.row select{font:inherit;border:1px solid var(--line);border-radius:8px;padding:6px 8px;min-width:0;flex:1}
 .item{font-size:14px;padding:6px 0;border-bottom:1px dashed var(--line)}.item:last-child{border:0}pre{white-space:pre-wrap;font:13px/1.45 inherit;background:var(--bg);padding:8px;border-radius:8px;margin:6px 0 0}
+.banner{background:var(--warn2);color:var(--warn);font-size:13px;padding:8px 16px;border-bottom:1px solid var(--line)}.sug textarea:disabled{background:#f3f3f3;color:var(--muted)}
 .aviso{font-size:12px;color:var(--muted)}.vazio{color:var(--muted);font-size:14px}.erro{color:var(--bad);font-size:13px;min-height:1em}
 @media (max-width:1000px){main{grid-template-columns:1fr}.chat{height:300px}}
 </style>
@@ -31,14 +32,18 @@ section{background:var(--card);border:1px solid var(--line);border-radius:12px;p
   <span class="sp"></span>
   <span class="aviso" id="relogio"></span>
   <button id="avancar" title="Só na demonstração: simula a passagem do tempo para ver o follow-up">Avançar 24h</button>
+  <button id="reiniciar" title="Só na demonstração: volta aos dados de exemplo">Reiniciar</button>
 </header>
+<div class="banner" id="banner" hidden>Demonstração pública com dados fictícios. Não digite nomes, telefones ou mensagens de pessoas reais. Nada é enviado para fora; os dados somem ao reiniciar.</div>
 <main>
   <section>
     <h2>Leads</h2>
     <div id="leads"></div>
-    <div class="etapa">Novo lead (simulação)</div>
-    <div class="row"><input id="nNome" placeholder="Nome"><input id="nTel" placeholder="Telefone com DDD, ex. 5519..."></div>
-    <div class="row"><input id="nMsg" placeholder="Primeira mensagem do cliente"><button id="nEnviar">Chegou</button></div>
+    <div id="novoLead">
+    <div class="etapa">Novo lead (simulação, identidade fictícia)</div>
+    <div class="row"><input id="nNome" maxlength="40" placeholder="Nome fictício (opcional)"></div>
+    <div class="row"><input id="nMsg" maxlength="500" placeholder="Primeira mensagem do cliente"><button id="nEnviar">Chegou</button></div>
+    </div>
   </section>
   <section>
     <h2 id="tituloConversa">Conversa</h2>
@@ -46,7 +51,7 @@ section{background:var(--card);border:1px solid var(--line);border-radius:12px;p
     <div class="chat" id="chat"><div class="vazio">Escolha um lead.</div></div>
     <div id="sug"></div>
     <div class="row" id="simRow" hidden>
-      <input id="simMsg" placeholder="Escreva como se fosse o cliente (simulação)">
+      <input id="simMsg" maxlength="500" placeholder="Escreva como se fosse o cliente (simulação)">
       <button id="simEnviar">Cliente envia</button>
     </div>
     <div class="row" id="etapaRow" hidden>
@@ -76,7 +81,7 @@ let E=null, sel=null, editando=false;
 const $=id=>document.getElementById(id);
 const el=(tag,attrs={},...kids)=>{const n=document.createElement(tag);for(const[k,v]of Object.entries(attrs)){if(k==='class')n.className=v;else if(k.startsWith('on'))n.addEventListener(k.slice(2),v);else n.setAttribute(k,v)}for(const k of kids)n.append(k instanceof Node?k:document.createTextNode(String(k)));return n};
 const hora=ms=>new Date(ms).toLocaleString('pt-BR',{timeZone:'America/Sao_Paulo',weekday:'short',day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'});
-async function api(p,b){$('erro').textContent='';const r=await fetch(p,b===undefined?{}:{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(b)});const j=await r.json();if(!r.ok){$('erro').textContent=j.erro||'Erro';throw new Error(j.erro)}return j}
+async function api(p,b){$('erro').textContent='';const r=await fetch(p,b===undefined?{}:{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(b)});const j=await r.json();if(!r.ok){if(r.status===409&&j.estado){E=j.estado;editando=false;desenhar()}$('erro').textContent=j.erro||'Erro';throw new Error(j.erro)}return j}
 async function carregar(){E=await api('/api/estado');desenhar()}
 function desenhar(){
   $('empresa').textContent='Assistente comercial · '+E.empresa;
@@ -84,7 +89,7 @@ function desenhar(){
   $('envio').textContent=E.enviador==='cloud-api'?'WhatsApp: Cloud API':'WhatsApp: simulado';
   $('modo').textContent=E.modo==='automatico'?'envio automático':'vendedor aprova';
   $('relogio').textContent='Agora: '+hora(E.agora);
-  $('avancar').hidden=!E.demo; $('aviso').textContent=E.aviso;
+  $('avancar').hidden=!E.demo; $('reiniciar').hidden=!E.demo; $('banner').hidden=!E.demo; $('novoLead').hidden=!E.demo; $('aviso').textContent=E.aviso;
   const L=$('leads');L.replaceChildren();
   for(const et of ETAPAS){const ls=E.leads.filter(l=>l.etapa===et);if(!ls.length)continue;L.append(el('div',{class:'etapa'},NOMES[et]+' ('+ls.length+')'));
     for(const l of ls){const tags=[];const ult=l.mensagens.at(-1);
@@ -102,10 +107,10 @@ function desenhar(){
     const C=$('chat');C.replaceChildren(...l.mensagens.map(m=>el('div',{class:'msg '+m.de},m.texto,el('small',{},hora(m.em)+(m.enviadaPor?' · '+m.enviadaPor:'')))));C.scrollTop=C.scrollHeight;
     const s=E.sugestoes[l.id];const S=$('sug');
     if(!s){S.replaceChildren()}else if(!editando){
-      const ta=el('textarea',{id:'sugTxt'});ta.value=s.resposta;ta.addEventListener('input',()=>{editando=true});
+      const modelo=/modelo aprovado/.test(s.intencao);const ta=el('textarea',{id:'sugTxt'});ta.value=s.resposta;ta.disabled=modelo;ta.addEventListener('input',()=>{editando=true});const versao=s.versao;
       S.replaceChildren(el('div',{class:'sug'},el('div',{class:'meta'},`Sugestão (${s.fonte==='claude'?'Claude':'regras'}) · ${s.intencao}${s.objecao?' · objeção: '+s.objecao:''}`),ta,
         el('div',{class:'meta'},'Próxima ação: '+s.proximaAcao+(s.novaEtapa?' · etapa → '+NOMES[s.novaEtapa]:'')+(s.visita?' · agenda: '+hora(s.visita.quando):'')),
-        el('div',{class:'row'},el('button',{class:'p',onclick:async()=>{editando=false;E=await api('/api/leads/'+l.id+'/aprovar',{texto:$('sugTxt').value});desenhar()}},'Enviar'),el('button',{onclick:async()=>{editando=false;E=await api('/api/leads/'+l.id+'/descartar',{});desenhar()}},'Descartar'))))}
+        el('div',{class:'row'},el('button',{class:'p',onclick:async()=>{editando=false;E=await api('/api/leads/'+l.id+'/aprovar',modelo?{versao}:{versao,texto:$('sugTxt').value});desenhar()}},modelo?'Enviar modelo (simulado)':'Enviar'),el('button',{onclick:async()=>{editando=false;E=await api('/api/leads/'+l.id+'/descartar',{versao});desenhar()}},'Descartar'))))}
     const es=$('etapaSel');es.replaceChildren(...ETAPAS.map(e=>{const o=el('option',{value:e},NOMES[e]);if(e===l.etapa)o.selected=true;return o}));
   }
   const T=$('tarefas');T.replaceChildren(...(E.tarefas.length?E.tarefas.map(t=>el('div',{class:'item'},(t.tipo==='responder'?'💬 ':t.tipo==='visita'?'📍 ':'🔁 ')+t.texto)):[el('div',{class:'vazio'},'Nada pendente.')]));
@@ -113,9 +118,10 @@ function desenhar(){
   $('eventos').replaceChildren(...E.eventos.slice(0,8).map(e=>el('div',{class:'item aviso'},hora(e.em)+' · '+e.texto)));
 }
 $('etapaSel').addEventListener('change',async e=>{E=await api('/api/leads/'+sel+'/etapa',{etapa:e.target.value});desenhar()});
-$('simEnviar').addEventListener('click',async()=>{const l=E.leads.find(x=>x.id===sel);const t=$('simMsg').value.trim();if(!l||!t)return;editando=false;E=await api('/api/simular',{telefone:l.telefone,nome:l.nome,texto:t});$('simMsg').value='';desenhar()});
+$('simEnviar').addEventListener('click',async()=>{const l=E.leads.find(x=>x.id===sel);const t=$('simMsg').value.trim();if(!l||!t)return;editando=false;E=await api('/api/simular',{leadId:l.id,texto:t});$('simMsg').value='';desenhar()});
 $('simMsg').addEventListener('keydown',e=>{if(e.key==='Enter')$('simEnviar').click()});
-$('nEnviar').addEventListener('click',async()=>{const tel=$('nTel').value.replace(/\D/g,''),t=$('nMsg').value.trim();if(tel.length<10||!t){$('erro').textContent='Informe telefone com DDD e a mensagem.';return}E=await api('/api/simular',{telefone:tel,nome:$('nNome').value.trim(),texto:t});sel=E.leads.find(x=>x.telefone===tel)?.id??null;['nNome','nTel','nMsg'].forEach(i=>$(i).value='');desenhar()});
+$('nEnviar').addEventListener('click',async()=>{const t=$('nMsg').value.trim();if(!t){$('erro').textContent='Escreva a mensagem do cliente.';return}const r=await api('/api/simular',{nome:$('nNome').value.trim(),texto:t});E=r;sel=r.leadId??null;['nNome','nMsg'].forEach(i=>$(i).value='');desenhar()});
+$('reiniciar').addEventListener('click',async()=>{editando=false;sel=null;E=await api('/api/reiniciar',{});desenhar()});
 $('avancar').addEventListener('click',async()=>{editando=false;E=await api('/api/relogio',{horas:24});desenhar()});
 $('resumo').addEventListener('click',async()=>{const r=await api('/api/resumo');$('resumoTxt').hidden=false;$('resumoTxt').textContent=r.texto});
 carregar();setInterval(()=>{if(!editando&&document.activeElement?.tagName!=='INPUT')carregar().catch(()=>{})},5000);
