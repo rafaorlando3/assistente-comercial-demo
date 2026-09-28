@@ -130,7 +130,7 @@ $('nEnviar').addEventListener('click',seguro(async()=>{const t=$('nMsg').value.t
 $('reiniciar').addEventListener('click',seguro(async()=>{E=await api('/api/reiniciar',{});editando=false;sel=null;desenhar()}));
 $('avancar').addEventListener('click',seguro(async()=>{E=await api('/api/relogio',{horas:24});editando=false;desenhar()}));
 $('resumo').addEventListener('click',seguro(async()=>{const r=await api('/api/resumo');$('resumoTxt').hidden=false;$('resumoTxt').textContent=r.texto}));
-carregar();setInterval(()=>{if(!editando&&document.activeElement?.tagName!=='INPUT')carregar().catch(()=>{})},5000);
+carregar().catch(()=>{});setInterval(()=>{if(!editando&&document.activeElement?.tagName!=='INPUT')carregar().catch(()=>{})},5000);
 </script>
 </body>
 </html>

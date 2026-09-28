@@ -73,24 +73,24 @@ export function incerteza(texto: string): boolean {
   );
 }
 
-/** Quantos dias o texto cita (hoje, amanhã, dia da semana, "dia 5", 05/10). */
+/**
+ * Quantos dias o texto cita (hoje, amanhã, depois de amanhã, dia da semana, "dia 5", "dia 03/10", 05/10).
+ * Um regex só, com trechos que não se sobrepõem: "depois de amanhã" é um trecho, e um "amanhã" separado é outro.
+ */
+const RE_DIA =
+  /\b(?:depois de amanha|amanha|hoje|domingo|segunda|terca|quarta|quinta|sexta|sabado)\b|\bdia \d{1,2}(?:\/\d{1,2}(?:\/\d{2,4})?)?\b|\b\d{1,2}\/\d{1,2}(?:\/\d{2,4})?\b/g;
 export function contarDias(texto: string): number {
-  const t = normalizar(texto);
-  const achados = [
-    ...t.matchAll(/\b(depois de amanha|amanha|hoje|domingo|segunda|terca|quarta|quinta|sexta|sabado)\b/g),
-    ...t.matchAll(/\bdia \d{1,2}\b|\b\d{1,2}\/\d{1,2}\b/g),
-  ].map(m => m[0]);
-  // "depois de amanhã" também casa "amanhã": conta uma vez só
-  return achados.filter(a => !(a === 'amanha' && achados.includes('depois de amanha'))).length;
+  return [...normalizar(texto).matchAll(RE_DIA)].length;
 }
 
 /**
- * Só é aceite de visita um único dia e horário, sem negativa, incerteza ou alternativa ("ou").
- * Qualquer outra coisa pede confirmação: marcar visita errada custa mais que perguntar de novo.
+ * Só é aceite de visita exatamente um dia explícito e um horário, sem negativa, incerteza ou alternativa ("ou").
+ * Sem dia ("às 10h"), com dois dias ou com o mesmo dia dito de dois jeitos ("sábado dia 03/10"), pede confirmação:
+ * marcar visita errada custa mais que perguntar de novo.
  */
 export function aceiteInequivoco(texto: string): boolean {
   const t = normalizar(texto);
-  return !recusaOuRemarcacao(texto) && !incerteza(texto) && !/\bou\b/.test(t) && contarHorarios(texto) === 1 && contarDias(texto) <= 1;
+  return !recusaOuRemarcacao(texto) && !incerteza(texto) && !/\bou\b/.test(t) && contarHorarios(texto) === 1 && contarDias(texto) === 1;
 }
 
 const RE_HORA = /\b(?:as\s+|a\s+)?(\d{1,2})(?:\s*h\s*(\d{2})?|:(\d{2})|\s+horas?)\b/g;

@@ -7,7 +7,7 @@ import { Assistente } from '../src/app.js';
 import { criarServidor, semear } from '../src/server.js';
 import { EnviadorSimulado, lerWebhook, payloadDeTeste, type Enviador } from '../src/whatsapp.js';
 import { sugerirPorRegras } from '../src/regras.js';
-import { extrairVisita } from '../src/texto.js';
+import { aceiteInequivoco, contarDias, extrairVisita } from '../src/texto.js';
 import type { BaseConhecimento, Lead } from '../src/types.js';
 
 const kb = JSON.parse(readFileSync(new URL('../data/base-conhecimento.json', import.meta.url), 'utf8')) as BaseConhecimento;
@@ -98,6 +98,69 @@ describe('DEMO-02: horário mencionado não é aceite de visita', () => {
   });
   it.each(['dia 31/02 às 10h', 'dia 31/09 às 10h', 'dia 30/02 às 9h'])('data que não existe (%s) não vira outra data', t => {
     expect(extrairVisita(t, AGORA)).toBeNull();
+  });
+});
+
+describe('X-0055: dias contados por trecho e visita só com o dia que a mensagem diz', () => {
+  const lead = (texto: string): Lead => ({
+    id: 'l1', telefone: '1', nome: 'Joana', origem: '', etapa: 'conversando', criadoEm: 0, ultimaDoCliente: AGORA, ultimaDaEmpresa: null,
+    followUps: 0, consumoKwh: 300, cidade: 'Campinas', mensagens: [{ id: 'm', de: 'cliente', texto, em: AGORA }], notas: [],
+  });
+  it.each([
+    ['Amanhã e depois de amanhã às 10h estou livre', 2],
+    ['depois de amanhã às 10h', 1],
+    ['amanhã às 10h', 1],
+    ['dia 03/10 às 14:00', 1],
+    ['sábado dia 03/10 às 10h', 2],
+    ['às 10h', 0],
+  ] as const)('contarDias("%s") = %i', (t, n) => expect(contarDias(t)).toBe(n));
+
+  it('"Amanhã e depois de amanhã às 10h estou livre" não marca visita (regras)', () => {
+    const s = sugerirPorRegras(lead('Amanhã e depois de amanhã às 10h estou livre'), kb, AGORA);
+    expect(s.visita).toBeNull();
+    expect(s.novaEtapa).not.toBe('visita');
+  });
+  it('controle: só "depois de amanhã" continua marcando no dia certo', () => {
+    const s = sugerirPorRegras(lead('Pode ser depois de amanhã às 10h, combinado'), kb, AGORA);
+    expect(s.visita?.quando).toBe(Date.parse('2026-09-30T10:00:00-03:00'));
+  });
+  it('controle: "dia 03/10 às 14:00" é um dia só e marca', () => {
+    const s = sugerirPorRegras(lead('Pode ser dia 03/10 às 14:00'), kb, AGORA);
+    expect(s.visita?.quando).toBe(Date.parse('2026-10-03T14:00:00-03:00'));
+  });
+
+  it.each(['Pode ser às 10h', 'Combinado, às 10h'])('"%s" (sem dia) não é aceite inequívoco', t => expect(aceiteInequivoco(t)).toBe(false));
+
+  async function comClaude(texto: string, quando: string | null) {
+    const claude: typeof fetch = async () =>
+      new Response(JSON.stringify({ content: [{ type: 'text', text: JSON.stringify({ resposta: 'Combinado!', novaEtapa: 'visita', visita: quando ? { quando } : null }) }] }), { status: 200 });
+    const a = new Assistente(kb, new EnviadorSimulado(), { modo: 'sugerir', claude: { apiKey: 'teste', model: 'modelo-teste', fetchImpl: claude } }, () => AGORA);
+    await a.receber(lerWebhook(payloadDeTeste('5519990000009', 'Joana', texto, 'c1', AGORA))[0]!);
+    const s = [...a.sugestoes.values()][0]!;
+    expect(s.fonte).toBe('claude');
+    return s;
+  }
+  it('modelo devolve visita para "Pode ser às 10h" (sem dia): pede confirmação', async () => {
+    const s = await comClaude('Pode ser às 10h', '2026-09-29T10:00:00-03:00');
+    expect(s.visita).toBeNull();
+    expect(s.novaEtapa).not.toBe('visita');
+    expect(s.resposta).not.toMatch(/Combinado/);
+    expect(s.resposta).toMatch(/confirmar um único dia e horário/);
+  });
+  it('modelo escolhe outro dia que o da mensagem: pede confirmação', async () => {
+    const s = await comClaude('Pode ser amanhã às 10h', '2026-09-30T10:00:00-03:00');
+    expect(s.visita).toBeNull();
+    expect(s.resposta).not.toMatch(/Combinado/);
+  });
+  it('modelo muda a etapa para visita sem data, e a data dita já passou ("hoje às 8h" às 13h): pede confirmação', async () => {
+    const s = await comClaude('Pode ser hoje às 8h', null);
+    expect(s.novaEtapa).not.toBe('visita');
+    expect(s.resposta).not.toMatch(/Combinado/);
+  });
+  it('controle: modelo com o mesmo dia e hora da mensagem mantém a visita', async () => {
+    const s = await comClaude('Pode ser amanhã às 10h', '2026-09-29T10:00:00-03:00');
+    expect(s.visita?.quando).toBe(Date.parse('2026-09-29T10:00:00-03:00'));
+    expect(s.novaEtapa).toBe('visita');
   });
 });
 

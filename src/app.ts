@@ -5,7 +5,7 @@ import type { Enviador, Recebida } from './whatsapp.js';
 import { pedirConfirmacao, sugerirPorRegras } from './regras.js';
 import { sugerirPorClaude, type ConfigClaude } from './claude.js';
 import { dentroDaJanela24h, followUpsDevidos, PADRAO, resumoDoDia, tarefas, type ConfigFollowUp } from './crm.js';
-import { aceiteInequivoco, primeiroNome } from './texto.js';
+import { aceiteInequivoco, extrairVisita, primeiroNome } from './texto.js';
 
 export type Config = {
   modo: 'sugerir' | 'automatico';
@@ -127,8 +127,12 @@ export class Assistente {
     } else s = sugerirPorRegras(lead, this.kb, agora);
     // Guarda comum às duas fontes: sem aceite inequívoco de um único dia e horário, não marca visita,
     // e o texto também pede confirmação (texto e etapa precisam dizer a mesma coisa).
+    // A data da visita tem de ser a que a própria mensagem diz: o modelo não escolhe dia nem hora por conta própria.
     const ultima = [...lead.mensagens].reverse().find(m => m.de === 'cliente')?.texto ?? '';
-    if ((s.visita || s.novaEtapa === 'visita') && !aceiteInequivoco(ultima)) s = { ...s, ...pedirConfirmacao(lead, ultima) };
+    if (s.visita || s.novaEtapa === 'visita') {
+      const dita = extrairVisita(ultima, agora);
+      if (!aceiteInequivoco(ultima) || dita === null || (s.visita && s.visita.quando !== dita)) s = { ...s, ...pedirConfirmacao(lead, ultima) };
+    }
     if (this.geracao.get(lead.id) !== n) return null; // chegou mensagem mais nova: esta sugestão é descartada
     if (s.dados.consumoKwh) lead.consumoKwh = s.dados.consumoKwh;
     if (s.dados.cidade) lead.cidade = s.dados.cidade;
