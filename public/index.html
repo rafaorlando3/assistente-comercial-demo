@@ -1,136 +1,154 @@
 <!doctype html>
 <html lang="pt-BR">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Assistente comercial</title>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Assistente comercial · Painel do vendedor</title>
+<script>try{const t=localStorage.getItem('comercial-tema');document.documentElement.dataset.theme=t||(matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light')}catch{document.documentElement.dataset.theme='light'}</script>
 <style>
-:root{--bg:#f4f6f5;--card:#fff;--ink:#17201b;--muted:#5d6b63;--line:#dfe5e1;--acc:#128c5e;--acc2:#e9f6ef;--warn:#b25b00;--warn2:#fff4e5;--bad:#b3261e;--cli:#fff;--emp:#dcf8c6}
-*{box-sizing:border-box}body{margin:0;font:15px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--ink)}
-header{display:flex;flex-wrap:wrap;gap:8px 16px;align-items:center;padding:12px 16px;background:var(--card);border-bottom:1px solid var(--line);position:sticky;top:0;z-index:2}
-header h1{font-size:17px;margin:0}.pill{font-size:12px;padding:2px 8px;border-radius:99px;background:var(--acc2);color:var(--acc);white-space:nowrap}.pill.w{background:var(--warn2);color:var(--warn)}
-header .sp{flex:1}button{font:inherit;border:1px solid var(--line);background:var(--card);border-radius:8px;padding:6px 12px;cursor:pointer}button.p{background:var(--acc);border-color:var(--acc);color:#fff}button:disabled{opacity:.5;cursor:default}
-main{display:grid;grid-template-columns:minmax(240px,300px) minmax(0,1fr) minmax(250px,320px);gap:12px;padding:12px;max-width:1400px;margin:0 auto}
-section{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px;min-width:0}h2{font-size:14px;margin:0 0 8px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
-.lead{padding:8px;border-radius:8px;border:1px solid transparent;cursor:pointer;margin-bottom:4px}.lead:hover{background:var(--bg)}.lead.sel{border-color:var(--acc);background:var(--acc2)}
-.lead b{display:block}.lead small{color:var(--muted)}.tag{font-size:11px;padding:1px 6px;border-radius:99px;background:var(--bg);margin-right:4px}.tag.r{background:#fde8e7;color:var(--bad)}.tag.f{background:var(--warn2);color:var(--warn)}.tag.v{background:var(--acc2);color:var(--acc)}
-.etapa{font-size:12px;color:var(--muted);margin:10px 0 4px;font-weight:600}
-.chat{background:#efeae2;border-radius:10px;padding:10px;height:340px;overflow:auto;display:flex;flex-direction:column;gap:6px}
-.msg{max-width:80%;padding:6px 9px;border-radius:8px;white-space:pre-wrap;overflow-wrap:anywhere;box-shadow:0 1px 0 rgba(0,0,0,.06)}.msg.cliente{background:var(--cli);align-self:flex-start}.msg.empresa{background:var(--emp);align-self:flex-end}.msg small{display:block;color:var(--muted);font-size:11px;margin-top:2px}
-.sug{margin-top:10px;border:1px solid var(--acc);border-radius:10px;padding:10px;background:var(--acc2)}.sug textarea{width:100%;min-height:90px;font:inherit;border:1px solid var(--line);border-radius:8px;padding:8px}
-.meta{font-size:13px;color:var(--muted);margin:6px 0}.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:8px}.row input,.row select{font:inherit;border:1px solid var(--line);border-radius:8px;padding:6px 8px;min-width:0;flex:1}
-.item{font-size:14px;padding:6px 0;border-bottom:1px dashed var(--line)}.item:last-child{border:0}pre{white-space:pre-wrap;font:13px/1.45 inherit;background:var(--bg);padding:8px;border-radius:8px;margin:6px 0 0}
-.banner{background:var(--warn2);color:var(--warn);font-size:13px;padding:8px 16px;border-bottom:1px solid var(--line)}.sug textarea:disabled{background:#f3f3f3;color:var(--muted)}
-.aviso{font-size:12px;color:var(--muted)}.vazio{color:var(--muted);font-size:14px}.erro{color:var(--bad);font-size:13px;min-height:1em}
-@media (max-width:1000px){main{grid-template-columns:1fr}.chat{height:300px}}
+:root{--bg:#f4f7f7;--surface:#fff;--ink:#203330;--muted:#758681;--line:#e5ece9;--green:#146c52;--mint:#eaf5ef;--amber:#a86817;--amber-bg:#fff5e3;--red:#ac5346;--red-bg:#fff0ed;--blue:#426996;--blue-bg:#eef4fb;--radius:16px}
+*{box-sizing:border-box}[hidden]{display:none!important}body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}button,input,select,textarea{font:inherit}button,a,input,select,textarea{outline-offset:3px}button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:2px solid var(--green)}button{cursor:pointer;border:1px solid var(--line);border-radius:9px;padding:8px 12px;color:var(--ink);background:#fff;font-weight:600;transition:background .15s}button:hover{background:#f0f6f2}button:disabled{opacity:.5;cursor:default}.primary{background:var(--green);border-color:var(--green);color:#fff}.primary:hover{background:#11573f}.quiet{border:0;background:transparent;color:var(--muted)}a{color:var(--green);text-decoration:none}a:hover{text-decoration:underline}h1,h2,h3,p{margin:0}h2{font-size:15px;letter-spacing:-.2px}h3{font-size:13px}.muted{color:var(--muted)}.small{font-size:12px}.eyebrow{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1.2px;color:var(--muted)}
+.app{height:100dvh;min-height:700px;display:flex;flex-direction:column}.topbar{height:64px;flex:none;padding:0 24px;display:flex;align-items:center;justify-content:space-between;background:#fff;border-bottom:1px solid var(--line);gap:16px}.brand{display:flex;align-items:center;gap:11px}.brand-icon{width:34px;height:34px;display:grid;place-items:center;border-radius:11px;background:var(--green);color:#fff;font-size:21px}.brand b{font-size:15px}.brand .small{font-size:11px}.top-actions{display:flex;align-items:center;gap:16px}.live{font-size:11px;color:var(--green);display:flex;gap:6px;align-items:center}.live:before{content:"";width:6px;height:6px;background:#439775;border-radius:50%}.notice{flex:none;padding:7px 24px;background:#eef4ef;color:#557566;font-size:11px;border-bottom:1px solid #e2eae3}.notice strong{color:#365a45}.page{padding:18px 24px 16px;display:flex;flex-direction:column;gap:15px;flex:1;min-height:0;max-width:1680px;width:100%;margin:auto}.overview{display:flex;align-items:center;justify-content:space-between;gap:14px;flex:none}.overview h1{font-size:26px;font-weight:650;letter-spacing:-1px}.overview p{font-size:12px;color:var(--muted);margin-top:2px}.date{font-size:12px;color:#566e64;text-align:right}.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;flex:none}.stat{border:1px solid var(--line);border-radius:12px;background:#fff;display:flex;align-items:center;gap:12px;padding:12px 15px}.stat-icon{width:36px;height:36px;border-radius:11px;display:grid;place-items:center;font-size:17px;flex:none}.red{background:var(--red-bg);color:var(--red)}.amber{background:var(--amber-bg);color:var(--amber)}.blue{background:var(--blue-bg);color:var(--blue)}.green{background:var(--mint);color:var(--green)}.stat b{font-size:22px;line-height:1.05;letter-spacing:-.5px;display:block}.stat .small{color:var(--muted);font-size:11px}.workspace{display:grid;grid-template-columns:minmax(215px,.85fr) minmax(340px,1.7fr) minmax(275px,1.04fr);gap:16px;flex:1;min-height:0}.panel{background:#fff;border:1px solid var(--line);border-radius:var(--radius);min-width:0;min-height:0;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 3px 10px #1b403003}.panel-head{padding:17px 16px 13px;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;gap:8px;flex:none}.panel-head .small{margin-top:3px}.count{font-size:11px;background:#f2f5f3;border-radius:20px;min-width:23px;padding:3px 7px;text-align:center;color:var(--muted)}.leads{padding:7px 9px;overflow:auto;flex:1;min-height:0}.stage-heading{display:flex;align-items:center;justify-content:space-between;padding:8px 7px 4px;font-size:10px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:#80928a}.lead{width:100%;text-align:left;border:1px solid transparent;padding:11px 10px;margin:2px 0;border-radius:11px;display:flex;gap:9px;background:transparent}.lead:hover{background:#f7faf8}.lead.sel{background:#edf6f1;border-color:#cce4d7}.avatar{width:31px;height:31px;flex:none;display:grid;place-items:center;border-radius:10px;background:#e6eeea;color:#557263;font-size:11px;font-weight:700}.lead.sel .avatar{background:#d7eadd;color:var(--green)}.lead-text{min-width:0;flex:1}.lead-name{display:block;font-size:12px;font-weight:650;margin-bottom:3px}.lead-preview{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;font-size:11px;line-height:1.5;color:var(--muted);font-weight:400}.tags{display:flex;gap:5px;margin-top:7px;flex-wrap:wrap}.tag{font-size:9px;font-weight:600;padding:2px 6px;border-radius:5px;display:inline-block}.panel-foot{padding:11px 14px;border-top:1px solid var(--line);flex:none}.full{width:100%}.conversation-head{padding:13px 16px;display:flex;align-items:center;justify-content:space-between;gap:10px;flex:none;border-bottom:1px solid var(--line)}.person{display:flex;gap:9px;align-items:center;min-width:0}.person h2{font-size:14px}.person .avatar{width:36px;height:36px}.stage-select{width:116px;max-width:40%;font-size:11px;padding:6px 8px;border:1px solid var(--line);border-radius:7px;color:var(--green);background:#f7faf8}.lead-info{padding:9px 16px;display:flex;flex-wrap:wrap;gap:6px 13px;color:#6f847a;font-size:10px;border-bottom:1px solid #edf2ef;flex:none}.chat{flex:1;min-height:110px;overflow:auto;background:#f7f9f8;padding:14px 16px;display:flex;flex-direction:column;gap:11px}.msg{max-width:91%;padding:10px 12px;border-radius:12px;white-space:pre-wrap;overflow-wrap:anywhere;font-size:12px;line-height:1.5}.msg.cliente{background:#fff;border:1px solid #e6ece8;align-self:flex-start;border-bottom-left-radius:3px}.msg.empresa{background:#e4f1e9;align-self:flex-end;border-bottom-right-radius:3px}.msg small{display:block;color:#8a9b91;font-size:9px;margin-top:5px;text-align:right}.empty{padding:16px;color:var(--muted);font-size:12px}.suggestion{flex:none;border-top:1px solid var(--line);padding:12px 15px;background:#fff}.suggestion-top{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px;font-size:11px;font-weight:650;color:var(--green)}.suggestion-label{display:flex;align-items:center;gap:7px}.suggestion-note{font-size:9px;font-weight:400;color:var(--muted)}.suggestion textarea{display:block;resize:vertical;width:100%;height:76px;min-height:58px;max-height:135px;border:1px solid #dbe7df;border-radius:9px;background:#f9fcfa;padding:9px 10px;font-size:12px;line-height:1.5;color:var(--ink)}.suggestion textarea:disabled{background:#f5f7f6;color:#718277;opacity:1}.next{font-size:10px;color:var(--muted);margin-top:7px;max-height:43px;overflow:auto}.next b{font-weight:600;color:#526e5d}.suggestion-actions{display:flex;justify-content:space-between;align-items:center;margin-top:9px;gap:8px}.suggestion-actions button{font-size:11px;padding:7px 11px}.conversation-foot{padding:8px 15px;border-top:1px solid var(--line);font-size:10px;color:var(--muted);display:flex;justify-content:space-between;align-items:center;gap:8px;flex:none}.conversation-foot button{font-size:10px;padding:3px 5px}.right-body{padding:14px;display:flex;flex-direction:column;gap:15px;overflow:auto;flex:1;min-height:0}.brief-title{font-size:18px;letter-spacing:-.5px;font-weight:650}.brief-desc{color:var(--muted);font-size:11px;margin-top:3px}.priorities{display:flex;flex-direction:column;gap:8px;margin-top:11px}.task{border:1px solid var(--line);border-radius:11px;padding:10px;text-align:left;display:flex;gap:9px;align-items:flex-start;width:100%;background:#fff;font-weight:400}.task:hover{border-color:#bedbca;background:#f9fcfa}.task-mark{width:26px;height:26px;border-radius:8px;display:grid;place-items:center;flex:none;font-size:11px;font-weight:700}.task b{font-size:11px;display:block;font-weight:650}.task small{font-size:10px;color:var(--muted);display:block;margin-top:3px}.task .arrow{margin-left:auto;align-self:center;color:#a2b3aa}.schedule{border-top:1px solid var(--line);padding-top:12px}.section-label{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:8px}.section-label h3{font-size:11px}.section-label a{font-size:10px}.visit{background:#f6f9fc;border:1px solid #e6edf4;border-radius:10px;padding:10px;display:flex;align-items:flex-start;gap:10px;width:100%;text-align:left}.visit-time{font-size:14px;font-weight:700;color:var(--blue);line-height:1.2}.visit-time small{display:block;font-size:8px;font-weight:500;margin-top:4px}.visit b{display:block;font-size:11px}.visit .small{font-size:10px;color:var(--muted);margin-top:2px}.funnel{border-top:1px solid var(--line);padding-top:12px}.funnel-line{display:flex;gap:4px;height:5px;border-radius:9px;overflow:hidden;margin:9px 0}.funnel-line span{min-width:3px}.funnel-legend{display:flex;flex-wrap:wrap;gap:5px 10px;font-size:9px;color:var(--muted)}.funnel-legend b{color:var(--ink);margin-right:2px}.right-foot{display:flex;gap:8px;padding:11px 13px;border-top:1px solid var(--line);flex:none}.right-foot button{font-size:10px;flex:1;padding:7px 5px}.page-foot{display:flex;justify-content:space-between;font-size:10px;color:#8b9d94;flex:none;gap:12px}.error{position:fixed;bottom:14px;left:50%;transform:translateX(-50%);max-width:650px;width:calc(100% - 32px);background:#fff0ed;border:1px solid #dfafa7;color:#933f32;padding:12px 16px;border-radius:10px;font-size:12px;z-index:20;box-shadow:0 4px 30px #51200015}.error:empty{display:none}
+dialog{padding:0;border:1px solid var(--line);border-radius:17px;box-shadow:0 20px 80px #10322230;width:min(540px,calc(100vw - 32px));max-height:85dvh;color:var(--ink)}dialog::backdrop{background:#132d285e;backdrop-filter:blur(3px)}.dialog-head{padding:18px 20px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center}.dialog-body{padding:18px 20px;overflow:auto}.dialog-body>p{font-size:12px;color:var(--muted);margin-bottom:16px}.field{display:block;font-size:11px;color:#667e71;margin:12px 0 5px}.form-row{display:flex;gap:8px}.form-row input,.form-row select{min-width:0;flex:1}.field-input{padding:9px;border:1px solid var(--line);border-radius:8px;width:100%;font-size:12px;background:#fff;color:var(--ink)}.dialog-body h3{margin:18px 0 5px}.dialog-body h3:first-child{margin-top:0}.dialog-body button{font-size:12px}.dialog-body pre{font:13px/1.7 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;white-space:pre-wrap;margin:0;overflow-wrap:anywhere}.event{padding:10px 0;border-bottom:1px solid var(--line);font-size:12px}.event small{display:block;color:var(--muted);font-size:10px;margin-bottom:3px}.dialog-actions{display:flex;gap:8px;margin-top:16px;justify-content:flex-end}.status-line{font-size:10px;color:var(--muted);display:flex;gap:12px;flex-wrap:wrap;margin-top:15px}.loading{opacity:.65;pointer-events:none}
+@media(min-width:1000px) and (max-height:820px){.app{min-height:680px}.topbar{height:54px}.page{padding:12px 18px;gap:11px}.overview h1{font-size:22px}.stat{padding:9px 13px}.panel-head{padding:12px 14px}.right-body{padding:12px;gap:11px}.task{padding:8px}.suggestion{padding:9px 13px}.suggestion textarea{height:61px}.lead{padding:8px}.chat{padding:10px 14px}.page-foot{display:none}}
+@media(max-width:1100px){.workspace{gap:10px;grid-template-columns:minmax(185px,.75fr) minmax(320px,1.5fr) minmax(245px,1fr)}.page{padding-left:14px;padding-right:14px}.topbar{padding:0 16px}.lead-preview{-webkit-line-clamp:1}.right-body{padding:11px}.top-actions{gap:10px}.live{display:none}}
+@media(max-width:900px){.app{height:auto;min-height:100dvh}.page{min-height:0;gap:14px}.workspace{grid-template-columns:minmax(190px,.8fr) minmax(0,1.7fr);align-items:start}.summary-panel{grid-column:1/-1}.right-body{display:grid;grid-template-columns:1.2fr 1fr;gap:20px}.right-body .funnel{grid-column:1/-1}.leads-panel{max-height:670px}.conversation-panel{height:670px}.topbar{height:62px}.top-actions .date{display:none}.notice{padding:7px 16px}.page-foot{display:block}.page-foot span:last-child{display:none}}
+@media(max-width:600px){.topbar{padding:0 14px}.brand b{font-size:13px}.brand-icon{width:29px;height:29px}.brand .small{max-width:155px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.top-actions button{font-size:11px;padding:7px 9px}.overview{align-items:flex-end}.overview h1{font-size:23px}.overview p{font-size:11px;max-width:220px}.date{font-size:10px}.stats{grid-template-columns:repeat(2,1fr);gap:8px}.stat{padding:9px 11px}.stat b{font-size:20px}.stat-icon{width:30px;height:30px}.workspace{display:flex;flex-direction:column;gap:14px}.panel{width:100%}.leads-panel{max-height:230px}.leads{display:flex;gap:8px;padding:10px;overflow:auto}.stage-heading{display:none}.lead{min-width:185px;max-width:210px;align-self:flex-start}.lead-preview{-webkit-line-clamp:1}.leads-panel .panel-foot{display:none}.conversation-panel{height:630px}.right-body{display:flex}.summary-panel{order:-1}.summary-panel .right-body{gap:12px}.priorities{display:grid;grid-template-columns:1fr 1fr}.task{padding:8px;gap:6px}.task-mark{display:none}.right-body .funnel{display:none}.schedule{display:none}.right-foot{padding:8px 11px}.panel-head{padding:11px 13px}.brief-title{font-size:16px}.page-foot{font-size:9px}.notice{font-size:10px}.conversation-panel{scroll-margin-top:10px}}
+@media(prefers-reduced-motion:reduce){*{scroll-behavior:auto!important;transition:none!important}}
+
+.theme-button{width:34px;height:34px;padding:0;font-size:18px;flex:none}.mobile-tabs{display:none}
+:root[data-theme=dark]{color-scheme:dark;--bg:#111b19;--surface:#192621;--ink:#e0ece6;--muted:#98ada2;--line:#2d3d35;--green:#77cba1;--mint:#233e30;--amber:#e8bf78;--amber-bg:#3a3020;--red:#e5a59a;--red-bg:#3f2c28;--blue:#a0c1e4;--blue-bg:#263547}
+[data-theme=dark] button,[data-theme=dark] .panel,[data-theme=dark] .topbar,[data-theme=dark] .stat,[data-theme=dark] .suggestion,[data-theme=dark] dialog,[data-theme=dark] .field-input{background:var(--surface);color:var(--ink)}
+[data-theme=dark] button:hover{background:#2a3c32}[data-theme=dark] .primary{background:#89d1aa;color:#102c1e;border-color:#89d1aa}[data-theme=dark] .primary:hover{background:#a4dfbe}[data-theme=dark] .brand-icon{background:#e5bc73;color:#3e3020}[data-theme=dark] .notice{background:#1f3027;color:#a8c3b2;border-color:var(--line)}[data-theme=dark] .notice strong{color:#d1e8d9}[data-theme=dark] .date,[data-theme=dark] .lead-info,[data-theme=dark] .next b{color:#a5bdae}[data-theme=dark] .avatar,[data-theme=dark] .count{background:#2b3c32;color:#bdd3c6}[data-theme=dark] .lead{background:transparent}[data-theme=dark] .lead.sel{background:#294435;border-color:#456e56}[data-theme=dark] .lead.sel .avatar{background:#3b5e47;color:#d8f0e1}[data-theme=dark] .lead:hover{background:#253b2e}[data-theme=dark] .chat{background:#15221c}[data-theme=dark] .msg.cliente{background:#26362d;border-color:#35473a}[data-theme=dark] .msg.empresa{background:#2e4938}[data-theme=dark] .msg small{color:#a1b4a5}[data-theme=dark] .suggestion textarea,[data-theme=dark] .stage-select{background:#15241c;color:var(--ink);border-color:#395040}[data-theme=dark] .suggestion textarea:disabled{background:#29372d;color:#b4c8ba}[data-theme=dark] .task{background:#1d2c24;border-color:var(--line)}[data-theme=dark] .visit{background:#22303a;border-color:#35464f}[data-theme=dark] .quiet{color:#adc4b7;background:transparent}[data-theme=dark] .lead-info,[data-theme=dark] .conversation-head{border-color:var(--line)}[data-theme=dark] .error{background:#472e28;color:#ffcdc0;border-color:#96604e}[data-theme=dark] .field{color:#b0c6b8}
+@media(max-width:600px){.app{height:100dvh;min-height:740px}.page{padding:11px 12px;gap:10px}.overview h1{font-size:21px}.overview p{display:none}.brand .small{max-width:135px}.top-actions{gap:6px}.topbar{height:56px}.theme-button{width:30px;height:30px;font-size:17px}.stats{grid-template-columns:repeat(4,1fr);gap:6px}.stat{padding:8px;display:block}.stat-icon{display:none}.stat b{font-size:19px}.stat .small{font-size:9px;display:block;line-height:1.25;min-height:23px;margin-top:5px}.mobile-tabs{display:flex;background:#e8efeb;border-radius:9px;padding:3px;gap:3px;flex:none}.mobile-tabs button{flex:1;border:0;background:transparent;padding:6px;font-size:12px;color:#718477}.mobile-tabs button[aria-pressed=true]{background:white;color:var(--green);box-shadow:0 1px 4px #1a372315}.mobile-tabs span{font-size:10px;margin-left:5px}.workspace{flex:1;min-height:0;gap:8px}.leads-panel{flex:none;height:97px}.leads-panel .panel-head{display:none}.leads{padding:6px;gap:3px}.lead{padding:6px;min-width:165px;max-width:175px;margin:0}.lead .avatar{width:26px;height:26px;font-size:9px}.lead-name{font-size:11px}.lead-preview{font-size:10px}.tags{margin-top:4px}.tag{font-size:8px}.conversation-panel{height:auto;flex:1;min-height:0}.conversation-head{padding:9px 11px}.person h2{font-size:12px}.person .small{font-size:10px}.person .avatar{width:29px;height:29px}.lead-info{padding:6px 11px;font-size:9px;gap:4px 10px}.chat{padding:10px;min-height:70px}.msg{font-size:11px;padding:7px 9px}.suggestion{padding:8px 11px}.suggestion textarea{font-size:11px;height:58px;min-height:48px;max-height:100px}.suggestion-top{font-size:10px;margin-bottom:5px}.next{font-size:9px;max-height:29px;margin-top:5px}.suggestion-actions{margin-top:6px}.suggestion-actions button{font-size:10px;padding:6px 9px}.conversation-foot{padding:6px 10px;font-size:9px}.conversation-foot button{font-size:9px}.page-foot{display:none}.summary-panel{order:initial;flex:1;min-height:0}.summary-panel .right-body{display:flex;gap:14px;padding:16px}.summary-panel .schedule,.summary-panel .funnel{display:block}.priorities{display:flex}.task{padding:11px;gap:10px}.task-mark{display:grid}.task b{font-size:12px}.task small{font-size:11px}.right-foot button{font-size:11px;padding:10px}.workspace[data-mobile=atendimento] .summary-panel{display:none}.workspace[data-mobile=dia] .leads-panel,.workspace[data-mobile=dia] .conversation-panel{display:none}[data-theme=dark] .mobile-tabs{background:#24352b}[data-theme=dark] .mobile-tabs button[aria-pressed=true]{background:#375240;color:#d8ede0}}
+
+
+/* Compact notebooks retain the main actions without scrolling the page. */
+@media(min-width:1001px) and (max-height:820px){.lead-preview{-webkit-line-clamp:1}.stage-heading{padding-top:6px;padding-bottom:2px}.right-body{gap:8px}.priorities{gap:6px;margin-top:8px}.task{padding:7px}.schedule,.funnel{padding-top:9px}.brief-desc{font-size:10px}.section-label{margin-bottom:6px}}
+/* Tablets use the same explicit work areas as phones. */
+@media(min-width:601px) and (max-width:1000px){.app{height:100dvh;min-height:700px}.page{gap:11px}.overview h1{font-size:22px}.topbar{height:54px}.stat{padding:9px 11px}.mobile-tabs{display:flex;gap:4px;padding:3px;background:var(--line);border-radius:10px;flex:none}.mobile-tabs button{flex:1;border:0;background:transparent;padding:7px}.mobile-tabs button[aria-pressed=true]{background:var(--surface);color:var(--green)}.workspace{grid-template-columns:minmax(190px,.8fr) minmax(0,1.7fr);align-items:stretch;min-height:0}.leads-panel{max-height:none}.conversation-panel{height:auto;min-height:0}.summary-panel{grid-column:1/-1}.summary-panel .right-body{display:flex;gap:14px}.workspace[data-mobile=atendimento] .summary-panel{display:none}.workspace[data-mobile=dia] .leads-panel,.workspace[data-mobile=dia] .conversation-panel{display:none}.page-foot{display:none}.lead-preview{-webkit-line-clamp:1}.suggestion textarea{height:65px}.chat{min-height:90px}}
+@media(max-width:600px){.msg{font-size:12px}.suggestion textarea{font-size:12px;height:64px}.suggestion-actions button{font-size:11px;min-height:34px}.lead-name{font-size:12px}.mobile-tabs button{min-height:34px}}
+.dialog-error{color:var(--red);font-size:12px;margin-bottom:12px}.dialog-error:empty{display:none}
 </style>
 </head>
 <body>
-<header>
-  <h1 id="empresa">Assistente comercial</h1>
-  <span class="pill" id="ia"></span><span class="pill" id="envio"></span><span class="pill" id="modo"></span>
-  <span class="sp"></span>
-  <span class="aviso" id="relogio"></span>
-  <button id="avancar" title="Só na demonstração: simula a passagem do tempo para ver o follow-up">Avançar 24h</button>
-  <button id="reiniciar" title="Só na demonstração: volta aos dados de exemplo">Reiniciar</button>
+<div class="app">
+<header class="topbar">
+  <div class="brand"><span class="brand-icon" aria-hidden="true">☀</span><div><b>Assistente comercial</b><div class="small muted" id="empresa">Carregando empresa…</div></div></div>
+  <div class="top-actions"><span class="live" id="envio">WhatsApp simulado</span><button id="tema" class="theme-button" aria-label="Ativar tema escuro" title="Alternar tema">☾</button><button id="abrirSim">Testar demo</button></div>
 </header>
-<div class="banner" id="banner" hidden>Demonstração pública com dados fictícios. Não digite nomes, telefones ou mensagens de pessoas reais. Nada é enviado para fora; os dados somem ao reiniciar.</div>
-<main>
-  <section>
-    <h2>Leads</h2>
-    <div id="leads"></div>
-    <div id="novoLead">
-    <div class="etapa">Novo lead (simulação, identidade fictícia)</div>
-    <div class="row"><input id="nNome" maxlength="40" placeholder="Nome fictício (opcional)"></div>
-    <div class="row"><input id="nMsg" maxlength="500" placeholder="Primeira mensagem do cliente"><button id="nEnviar">Chegou</button></div>
-    </div>
-  </section>
-  <section>
-    <h2 id="tituloConversa">Conversa</h2>
-    <div class="meta" id="info"></div>
-    <div class="chat" id="chat"><div class="vazio">Escolha um lead.</div></div>
-    <div id="sug"></div>
-    <div class="row" id="simRow" hidden>
-      <input id="simMsg" maxlength="500" placeholder="Escreva como se fosse o cliente (simulação)">
-      <button id="simEnviar">Cliente envia</button>
-    </div>
-    <div class="row" id="etapaRow" hidden>
-      <label for="etapaSel" class="aviso">Etapa no CRM</label>
-      <select id="etapaSel"></select>
-    </div>
-    <div class="erro" id="erro"></div>
-  </section>
-  <section>
-    <h2>Hoje</h2>
-    <div id="tarefas"></div>
-    <h2 style="margin-top:14px">Agenda de visitas</h2>
-    <div id="visitas"></div>
-    <div class="aviso" style="margin-top:6px">O Google Agenda pode assinar <a href="/agenda.ics" id="ics">/agenda.ics</a> (Adicionar agenda &gt; Do URL).</div>
-    <h2 style="margin-top:14px">Resumo para o vendedor</h2>
-    <button id="resumo">Gerar resumo do dia</button>
-    <pre id="resumoTxt" hidden></pre>
-    <h2 style="margin-top:14px">Atividade</h2>
-    <div id="eventos"></div>
-    <p class="aviso" id="aviso"></p>
-  </section>
+<div class="notice" id="banner" hidden><strong>Modo demonstração.</strong> Use apenas dados fictícios. Nenhuma mensagem é enviada de verdade; os dados são temporários.</div>
+<main class="page">
+  <div class="overview"><div><h1>Seu dia, em ordem.</h1><p>Conversas, próximas ações e oportunidades em um só lugar.</p></div><div class="date" id="relogio"></div></div>
+  <div class="stats" aria-label="Resumo do dia">
+    <div class="stat"><span class="stat-icon red" aria-hidden="true">↩</span><div><b id="kResponder">—</b><span class="small">Aguardando resposta</span></div></div>
+    <div class="stat"><span class="stat-icon amber" aria-hidden="true">↻</span><div><b id="kFollow">—</b><span class="small">Retomar contato</span></div></div>
+    <div class="stat"><span class="stat-icon blue" aria-hidden="true">▦</span><div><b id="kVisitas">—</b><span class="small">Visitas hoje</span></div></div>
+    <div class="stat"><span class="stat-icon green" aria-hidden="true">↗</span><div><b id="kAtivos">—</b><span class="small">Leads no funil</span></div></div>
+  </div>
+  <nav class="mobile-tabs" aria-label="Área de trabalho"><button id="tabAtendimento" aria-pressed="true">Atendimento</button><button id="tabDia" aria-pressed="false">Meu dia <span id="tabPendencias"></span></button></nav>
+  <div class="workspace" id="workspace" data-mobile="atendimento">
+    <section class="panel leads-panel" aria-labelledby="leadsTitulo">
+      <div class="panel-head"><div><h2 id="leadsTitulo">Sua carteira</h2><p class="small muted">Organizada por etapa</p></div><span class="count" id="totalLeads">0</span></div>
+      <div class="leads" id="leads"></div>
+      <div class="panel-foot" id="novoLead"><button class="full quiet" id="novoLeadBtn">+ Simular novo lead</button></div>
+    </section>
+    <section class="panel conversation-panel" aria-labelledby="tituloConversa">
+      <div class="conversation-head"><div class="person"><span class="avatar" id="avatar" aria-hidden="true">—</span><div><h2 id="tituloConversa">Conversa</h2><div class="small muted" id="origem">Selecione um lead</div></div></div><select id="etapaSel" class="stage-select" aria-label="Etapa no CRM" hidden></select></div>
+      <div class="lead-info" id="info"></div>
+      <div class="chat" id="chat" role="log" aria-label="Histórico da conversa"><div class="empty">Carregando suas conversas…</div></div>
+      <div id="sug"></div>
+      <div class="conversation-foot"><span id="modo">Você revisa antes de enviar</span><button class="quiet" id="simBtn">Simular resposta do cliente →</button></div>
+    </section>
+    <section class="panel summary-panel" aria-labelledby="resumoTitulo">
+      <div class="panel-head"><div><h2 id="resumoTitulo">Resumo do vendedor</h2><p class="small muted">O que merece sua atenção</p></div><span class="tag green">Hoje</span></div>
+      <div class="right-body">
+        <div><div class="brief-title" id="briefTitulo">Preparando seu dia…</div><p class="brief-desc" id="briefDesc"></p><div class="priorities" id="tarefas"></div></div>
+        <div class="schedule"><div class="section-label"><h3>Próxima visita</h3><a href="/agenda.ics" id="ics" title="Adicionar esta URL no Google Agenda">Exportar agenda ↗</a></div><div id="visitas"></div></div>
+        <div class="funnel"><div class="section-label"><h3>Visão do funil</h3><span class="small muted" id="fechados"></span></div><div class="funnel-line" id="funilBarra" aria-hidden="true"></div><div class="funnel-legend" id="funilLegenda"></div></div>
+      </div>
+      <div class="right-foot"><button id="resumo">Resumo em texto ↗</button><button id="atividade">Ver atividade</button></div>
+    </section>
+  </div>
+  <footer class="page-foot"><span id="aviso">Dados fictícios para demonstração.</span><span id="ia">Sugestões por regras · sem chave de IA</span></footer>
 </main>
+</div>
+<div class="error" id="erro" role="alert"></div>
+<dialog id="simDialog" aria-labelledby="simTitulo"><div class="dialog-head"><h2 id="simTitulo">Testar demonstração</h2><button class="quiet" data-close="simDialog" aria-label="Fechar simulação">✕</button></div><div class="dialog-body"><div id="simErro" class="dialog-error" role="alert"></div><p>Experimente com nomes e mensagens fictícios. Nenhum envio sai desta demonstração.</p><h3>Novo lead</h3><label class="field" for="nNome">Nome fictício (opcional)</label><input class="field-input" id="nNome" maxlength="40" placeholder="Ex.: Lead de teste"><label class="field" for="nMsg">Primeira mensagem</label><div class="form-row"><input class="field-input" id="nMsg" maxlength="500" placeholder="Olá, quero um orçamento"><button id="nEnviar" class="primary">Adicionar</button></div><h3>Responder como cliente</h3><label class="field" for="simLead">Conversa</label><select class="field-input" id="simLead"></select><label class="field" for="simMsg">Mensagem fictícia</label><div class="form-row"><input class="field-input" id="simMsg" maxlength="500" placeholder="Meu consumo é de 400 kWh"><button id="simEnviar">Simular</button></div><h3>Tempo e dados</h3><div class="form-row"><button id="avancar">Avançar 24h</button><button id="reiniciar">Reiniciar demonstração</button></div><p class="small muted" style="margin-top:8px">Avance o relógio para acompanhar os retornos. Reiniciar restaura os exemplos e apaga os testes desta demo.</p></div></dialog>
+<dialog id="resumoDialog" aria-labelledby="resumoDialogTitulo"><div class="dialog-head"><h2 id="resumoDialogTitulo">Resumo do dia</h2><button class="quiet" data-close="resumoDialog" aria-label="Fechar resumo">✕</button></div><div class="dialog-body"><pre id="resumoTxt"></pre><div class="dialog-actions"><button id="copiarResumo">Copiar texto</button></div></div></dialog>
+<dialog id="atividadeDialog" aria-labelledby="atividadeTitulo"><div class="dialog-head"><h2 id="atividadeTitulo">Atividade recente</h2><button class="quiet" data-close="atividadeDialog" aria-label="Fechar atividade">✕</button></div><div class="dialog-body"><div id="eventos"></div></div></dialog>
 <script>
 const ETAPAS=['novo','conversando','proposta','visita','fechado','perdido'];
 const NOMES={novo:'Novo',conversando:'Em conversa',proposta:'Proposta',visita:'Visita marcada',fechado:'Fechado',perdido:'Perdido'};
-let E=null, sel=null, editando=false;
+const CORES={novo:'#adc6bb',conversando:'#80aa95',proposta:'#d4b470',visita:'#94b2d0',fechado:'#247553',perdido:'#d8dfdb'};
+let E=null,sel=null,editando=false,renderedChat='',renderedSuggestion='',renderedLeads='',busy=false;
 const $=id=>document.getElementById(id);
-// O erro já aparece na tela (api() escreve em #erro); aqui só evita promessa rejeitada sem tratamento.
+function mostrarErro(texto){$('erro').textContent=texto;$('simErro').textContent=texto}
 const seguro=f=>e=>{Promise.resolve().then(()=>f(e)).catch(()=>{})};
 const el=(tag,attrs={},...kids)=>{const n=document.createElement(tag);for(const[k,v]of Object.entries(attrs)){if(k==='class')n.className=v;else if(k.startsWith('on'))n.addEventListener(k.slice(2),seguro(v));else n.setAttribute(k,v)}for(const k of kids)n.append(k instanceof Node?k:document.createTextNode(String(k)));return n};
 const hora=ms=>new Date(ms).toLocaleString('pt-BR',{timeZone:'America/Sao_Paulo',weekday:'short',day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'});
-async function api(p,b){$('erro').textContent='';const post=b!==undefined;let r;
-  // Falha de rede ou resposta que não é JSON: avisa na tela e mantém o que o vendedor estava editando. Nunca reenvia sozinho.
-  try{r=await fetch(p,post?{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(b)}:{})}catch(e){$('erro').textContent=post?'Sem resposta do servidor. Não dá para saber se a ação foi feita: confira a conversa antes de repetir.':'Sem conexão com o servidor. Tentando de novo em instantes.';throw e}
-  let j;try{j=await r.json()}catch(e){$('erro').textContent=`Resposta inesperada do servidor (HTTP ${r.status}).`+(post?' Não dá para saber se a ação foi feita: confira a conversa antes de repetir.':'');throw e}
-  if(!r.ok){if(r.status===409&&j.estado){E=j.estado;editando=false;desenhar()}$('erro').textContent=j.erro||('Erro '+r.status);throw new Error(j.erro)}return j}
-async function carregar(){E=await api('/api/estado');desenhar()}
+const horario=ms=>new Date(ms).toLocaleTimeString('pt-BR',{timeZone:'America/Sao_Paulo',hour:'2-digit',minute:'2-digit'});
+const iniciais=s=>String(s||'?').trim().split(/\s+/).slice(0,2).map(x=>x[0]).join('').toUpperCase();
+function areaMobile(area){$('workspace').dataset.mobile=area;$('tabAtendimento').setAttribute('aria-pressed',String(area==='atendimento'));$('tabDia').setAttribute('aria-pressed',String(area==='dia'))}
+function escolher(id){sel=id;editando=false;renderedSuggestion='';areaMobile('atendimento');desenhar()}
+async function api(p,b){mostrarErro('');const post=b!==undefined;let r;try{r=await fetch(p,post?{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(b)}:{})}catch(e){mostrarErro(post?'Sem resposta do servidor. Não dá para saber se a ação foi feita: confira a conversa antes de repetir.':'Sem conexão com o servidor. Tentando de novo em instantes.');throw e}let j;try{j=await r.json()}catch(e){mostrarErro(`Resposta inesperada do servidor (HTTP ${r.status}).`+(post?' Confira a conversa antes de repetir.':''));throw e}if(!r.ok){if(r.status===409&&j.estado){E=j.estado;editando=false;desenhar()}mostrarErro(j.erro||('Erro '+r.status));throw new Error(j.erro)}return j}
+async function carregar(){if(busy)return;E=await api('/api/estado');desenhar()}
+async function executar(f){if(busy)return;busy=true;try{await f()}finally{busy=false}}
+function abrirSim(){if(!E?.demo)return;mostrarErro('');const s=$('simLead');s.replaceChildren(...E.leads.map(l=>{const o=el('option',{value:l.id},l.nome||l.telefone);o.selected=l.id===sel;return o}));$('simDialog').showModal()}
 function desenhar(){
-  $('empresa').textContent='Assistente comercial · '+E.empresa;
-  $('ia').textContent=E.ia==='claude'?'IA: Claude':'IA: regras (sem chave)';
-  $('envio').textContent=E.enviador==='cloud-api'?'WhatsApp: Cloud API':'WhatsApp: simulado';
-  $('modo').textContent=E.modo==='automatico'?'envio automático':'vendedor aprova';
-  $('relogio').textContent='Agora: '+hora(E.agora);
-  $('avancar').hidden=!E.demo; $('reiniciar').hidden=!E.demo; $('banner').hidden=!E.demo; $('novoLead').hidden=!E.demo; $('aviso').textContent=E.aviso;
-  const L=$('leads');L.replaceChildren();
-  for(const et of ETAPAS){const ls=E.leads.filter(l=>l.etapa===et);if(!ls.length)continue;L.append(el('div',{class:'etapa'},NOMES[et]+' ('+ls.length+')'));
-    for(const l of ls){const tags=[];const ult=l.mensagens.at(-1);
-      if(ult&&ult.de==='cliente'&&l.etapa!=='perdido')tags.push(el('span',{class:'tag r'},'responder'));
-      if(E.sugestoes[l.id]?.intencao.startsWith('follow-up'))tags.push(el('span',{class:'tag f'},'follow-up'));
-      if(E.visitas.some(v=>v.leadId===l.id&&v.quando>E.agora))tags.push(el('span',{class:'tag v'},'visita'));
-      L.append(el('div',{class:'lead'+(sel===l.id?' sel':''),onclick:()=>{sel=l.id;editando=false;desenhar()}},el('b',{},l.nome||l.telefone),el('small',{},(ult?ult.texto.slice(0,60):'')),el('div',{},...tags)))}}
-  if(!E.leads.length)L.append(el('div',{class:'vazio'},'Nenhum lead ainda.'));
-  const l=E.leads.find(x=>x.id===sel);
-  $('simRow').hidden=!l||!E.demo;$('etapaRow').hidden=!l;
-  if(!l){$('tituloConversa').textContent='Conversa';$('info').textContent='';$('chat').replaceChildren(el('div',{class:'vazio'},'Escolha um lead.'));$('sug').replaceChildren()}
+  if(!E)return;
+  if(!E.leads.some(l=>l.id===sel))sel=E.tarefas.find(t=>t.tipo==='responder')?.leadId??E.leads[0]?.id??null;
+  $('empresa').textContent=E.empresa;
+  $('ia').textContent=E.ia==='claude'?'Sugestões com Claude':'Sugestões por regras · sem chave de IA';
+  $('envio').textContent=E.enviador==='cloud-api'?'WhatsApp conectado':'WhatsApp simulado';
+  $('modo').textContent=E.modo==='automatico'?'Modo de envio automático':'Você revisa antes de enviar';
+  $('relogio').textContent=hora(E.agora);
+  for(const id of ['abrirSim','novoLead','simBtn'])$(id).hidden=!E.demo;
+  $('banner').hidden=!E.demo;$('aviso').textContent=E.demo?'Empresa e valores fictícios · nenhuma mensagem real é enviada.':E.aviso;
+  const respostas=E.tarefas.filter(t=>t.tipo==='responder'),follow=E.tarefas.filter(t=>t.tipo==='follow-up'),visitasHoje=E.tarefas.filter(t=>t.tipo==='visita');
+  $('tabPendencias').textContent=respostas.length+follow.length||'';$('kResponder').textContent=respostas.length;$('kFollow').textContent=follow.length;$('kVisitas').textContent=visitasHoje.length;$('kAtivos').textContent=E.leads.filter(l=>!['fechado','perdido'].includes(l.etapa)).length;
+  $('totalLeads').textContent=E.leads.length;
+  const L=$('leads');const leadStamp=JSON.stringify([sel,E.leads.map(l=>[l.id,l.nome,l.etapa,l.mensagens.at(-1)]),respostas.map(t=>t.leadId),follow.map(t=>t.leadId),E.visitas]);if(renderedLeads!==leadStamp){const oldScroll=L.scrollTop,oldLeft=L.scrollLeft;L.replaceChildren();
+  for(const et of ETAPAS){const ls=E.leads.filter(l=>l.etapa===et);if(!ls.length)continue;L.append(el('div',{class:'stage-heading'},NOMES[et],el('span',{},ls.length)));
+    for(const l of ls){const tags=[],ult=l.mensagens.at(-1);if(respostas.some(t=>t.leadId===l.id))tags.push(el('span',{class:'tag red'},'Responder'));if(follow.some(t=>t.leadId===l.id))tags.push(el('span',{class:'tag amber'},'Retomar contato'));if(E.visitas.some(v=>v.leadId===l.id&&v.quando>E.agora))tags.push(el('span',{class:'tag blue'},'Visita agendada'));
+      L.append(el('button',{class:'lead'+(sel===l.id?' sel':''),'aria-pressed':String(sel===l.id),onclick:()=>escolher(l.id,true)},el('span',{class:'avatar','aria-hidden':'true'},iniciais(l.nome)),el('span',{class:'lead-text'},el('span',{class:'lead-name'},l.nome||l.telefone),el('span',{class:'lead-preview'},ult?.texto??'Sem mensagens'),el('span',{class:'tags'},...tags))))}}
+  if(!E.leads.length)L.append(el('div',{class:'empty'},'Nenhum lead por aqui.'));L.scrollTop=oldScroll;L.scrollLeft=oldLeft;renderedLeads=leadStamp;}
+  const l=E.leads.find(x=>x.id===sel);$('etapaSel').hidden=!l;$('simBtn').disabled=!l;
+  if(!l){$('tituloConversa').textContent='Conversa';$('origem').textContent='Selecione um lead';$('avatar').textContent='—';$('info').replaceChildren();$('chat').replaceChildren(el('div',{class:'empty'},'Adicione um lead fictício para experimentar.'));$('sug').replaceChildren();renderedChat=''}
   else{
-    $('tituloConversa').textContent=l.nome||l.telefone;
-    $('info').textContent=`${l.telefone} · ${NOMES[l.etapa]} · consumo ${l.consumoKwh?l.consumoKwh+' kWh/mês':'?'} · cidade ${l.cidade||'?'} · ${l.janela24h?'dentro da janela de 24h':'fora da janela de 24h (só modelo aprovado)'}`;
-    const C=$('chat');C.replaceChildren(...l.mensagens.map(m=>el('div',{class:'msg '+m.de},m.texto,el('small',{},hora(m.em)+(m.enviadaPor?' · '+m.enviadaPor:'')))));C.scrollTop=C.scrollHeight;
-    const s=E.sugestoes[l.id];const S=$('sug');
-    if(!s){S.replaceChildren()}else if(!editando){
-      const modelo=/modelo aprovado/.test(s.intencao);const ta=el('textarea',{id:'sugTxt'});ta.value=s.resposta;ta.disabled=modelo;ta.addEventListener('input',()=>{editando=true});const versao=s.versao;
-      S.replaceChildren(el('div',{class:'sug'},el('div',{class:'meta'},`Sugestão (${s.fonte==='claude'?'Claude':'regras'}) · ${s.intencao}${s.objecao?' · objeção: '+s.objecao:''}`),ta,
-        el('div',{class:'meta'},'Próxima ação: '+s.proximaAcao+(s.novaEtapa?' · etapa → '+NOMES[s.novaEtapa]:'')+(s.visita?' · agenda: '+hora(s.visita.quando):'')),
-        el('div',{class:'row'},el('button',{class:'p',onclick:async()=>{E=await api('/api/leads/'+l.id+'/aprovar',modelo?{versao}:{versao,texto:$('sugTxt').value});editando=false;desenhar()}},modelo?(E.enviador==='simulado'?'Enviar modelo (simulado)':'Enviar modelo aprovado'):'Enviar'),el('button',{onclick:async()=>{E=await api('/api/leads/'+l.id+'/descartar',{versao});editando=false;desenhar()}},'Descartar'))))}
-    const es=$('etapaSel');es.replaceChildren(...ETAPAS.map(e=>{const o=el('option',{value:e},NOMES[e]);if(e===l.etapa)o.selected=true;return o}));
+    $('tituloConversa').textContent=l.nome||l.telefone;$('origem').textContent='Conversa por WhatsApp';$('avatar').textContent=iniciais(l.nome);
+    $('info').replaceChildren(el('span',{},l.cidade||'Cidade a confirmar'),el('span',{},l.consumoKwh?l.consumoKwh+' kWh/mês':'Consumo a confirmar'),el('span',{},l.janela24h?'Janela de 24h aberta':'Fora de 24h · modelo aprovado'));
+    const stamp=l.id+JSON.stringify(l.mensagens);if(renderedChat!==stamp){const C=$('chat'),mesmo=renderedChat.startsWith(l.id),perto=C.scrollHeight-C.scrollTop-C.clientHeight<50;C.replaceChildren(...l.mensagens.map(m=>el('div',{class:'msg '+m.de},m.texto,el('small',{},horario(m.em)+(m.enviadaPor?' · '+m.enviadaPor:'')))));if(!mesmo||perto)C.scrollTop=C.scrollHeight;renderedChat=stamp}
+    const s=E.sugestoes[l.id],S=$('sug'),sugStamp=l.id+JSON.stringify(s);
+    if(!s){S.replaceChildren(el('div',{class:'suggestion'},el('p',{class:'small muted'},'Nenhuma sugestão pendente para esta conversa.')))}else if(!editando&&renderedSuggestion!==sugStamp){
+      const modelo=/modelo aprovado/.test(s.intencao),ta=el('textarea',{id:'sugTxt','aria-label':'Resposta sugerida para revisão'});ta.value=s.resposta;ta.disabled=modelo;ta.addEventListener('input',()=>{editando=true});const versao=s.versao;
+      S.replaceChildren(el('div',{class:'suggestion'},el('div',{class:'suggestion-top'},el('span',{class:'suggestion-label'},'✧ Resposta sugerida'),el('span',{class:'suggestion-note'},modelo?'Modelo aprovado':s.fonte==='claude'?'Sugestão do assistente':'Base da empresa')),ta,el('div',{class:'next'},el('b',{},'Próximo passo: '),s.proximaAcao+(s.novaEtapa?' · '+NOMES[s.novaEtapa]:'')+(s.visita?' · '+hora(s.visita.quando):'')),el('div',{class:'suggestion-actions'},el('button',{class:'quiet',onclick:()=>executar(async()=>{E=await api('/api/leads/'+l.id+'/descartar',{versao});editando=false;desenhar()})},'Descartar'),el('button',{class:'primary',onclick:()=>executar(async()=>{E=await api('/api/leads/'+l.id+'/aprovar',modelo?{versao}:{versao,texto:$('sugTxt').value});editando=false;desenhar()})},modelo?(E.enviador==='simulado'?'Simular envio do modelo →':'Enviar modelo aprovado →'):(E.enviador==='simulado'?'Aprovar e simular envio →':'Aprovar e enviar →')))))
+    }
+    if(!editando)renderedSuggestion=sugStamp;
+    const es=$('etapaSel');es.replaceChildren(...ETAPAS.map(e=>{const o=el('option',{value:e},NOMES[e]);o.selected=e===l.etapa;return o}));
   }
-  const T=$('tarefas');T.replaceChildren(...(E.tarefas.length?E.tarefas.map(t=>el('div',{class:'item'},(t.tipo==='responder'?'💬 ':t.tipo==='visita'?'📍 ':'🔁 ')+t.texto)):[el('div',{class:'vazio'},'Nada pendente.')]));
-  const V=$('visitas');const fut=E.visitas.filter(v=>v.quando>E.agora-3600e3);V.replaceChildren(...(fut.length?fut.map(v=>el('div',{class:'item'},hora(v.quando)+' · '+v.titulo)):[el('div',{class:'vazio'},'Nenhuma visita marcada.')]));
-  $('eventos').replaceChildren(...E.eventos.slice(0,8).map(e=>el('div',{class:'item aviso'},hora(e.em)+' · '+e.texto)));
+  const pendentes=[...respostas,...follow];$('briefTitulo').textContent=pendentes.length?`${pendentes.length} ${pendentes.length===1?'contato para cuidar':'contatos para cuidar'}`:'Atendimento em dia';$('briefDesc').textContent=pendentes.length?'Comece pelas respostas. Depois, retome as propostas.':'Sem respostas ou retornos pendentes agora.';
+  $('tarefas').replaceChildren(...(pendentes.length?pendentes.map((t,i)=>{const lead=E.leads.find(x=>x.id===t.leadId),res=t.tipo==='responder';return el('button',{class:'task',onclick:()=>escolher(t.leadId,true)},el('span',{class:'task-mark '+(res?'red':'amber')},String(i+1).padStart(2,'0')),el('span',{},el('b',{},lead?.nome||'Conversa'),el('small',{},res?'Responder mensagem':!lead?.janela24h?'Retomar com modelo aprovado':'Retomar proposta')),el('span',{class:'arrow','aria-hidden':'true'},'→'))}):[el('div',{class:'small muted'},'As novas prioridades aparecem aqui.')]));
+  const fut=E.visitas.filter(v=>v.quando>=E.agora).sort((a,b)=>a.quando-b.quando),v=fut[0];$('visitas').replaceChildren();
+  if(v){const lead=E.leads.find(l=>l.id===v.leadId);$('visitas').append(el('button',{class:'visit',onclick:()=>escolher(v.leadId,true)},el('span',{class:'visit-time'},horario(v.quando),el('small',{},new Date(v.quando).toLocaleDateString('pt-BR',{timeZone:'America/Sao_Paulo',day:'2-digit',month:'2-digit'}))),el('span',{},el('b',{},lead?.nome||'Visita técnica'),el('div',{class:'small'},lead?.cidade||v.titulo))));if(fut.length>1)$('visitas').append(el('div',{class:'small muted',style:'margin-top:6px'},`+ ${fut.length-1} na agenda exportada`))}else $('visitas').append(el('p',{class:'small muted'},'Nenhuma visita futura.'));
+  $('fechados').textContent=E.leads.filter(l=>l.etapa==='fechado').length+' fechados';$('funilBarra').replaceChildren();$('funilLegenda').replaceChildren();
+  for(const et of ETAPAS){const n=E.leads.filter(l=>l.etapa===et).length;if(n){$('funilBarra').append(el('span',{style:`flex:${n};background:${CORES[et]}`}));$('funilLegenda').append(el('span',{},el('b',{},n),NOMES[et]))}}
+  $('eventos').replaceChildren(...E.eventos.slice(0,30).map(e=>el('div',{class:'event'},el('small',{},hora(e.em)),e.texto)));
 }
-$('etapaSel').addEventListener('change',seguro(async e=>{E=await api('/api/leads/'+sel+'/etapa',{etapa:e.target.value});desenhar()}));
-$('simEnviar').addEventListener('click',seguro(async()=>{const l=E.leads.find(x=>x.id===sel);const t=$('simMsg').value.trim();if(!l||!t)return;E=await api('/api/simular',{leadId:l.id,texto:t});editando=false;$('simMsg').value='';desenhar()}));
-$('simMsg').addEventListener('keydown',seguro(e=>{if(e.key==='Enter')$('simEnviar').click()}));
-$('nEnviar').addEventListener('click',seguro(async()=>{const t=$('nMsg').value.trim();if(!t){$('erro').textContent='Escreva a mensagem do cliente.';return}const r=await api('/api/simular',{nome:$('nNome').value.trim(),texto:t});E=r;sel=r.leadId??null;['nNome','nMsg'].forEach(i=>$(i).value='');desenhar()}));
-$('reiniciar').addEventListener('click',seguro(async()=>{E=await api('/api/reiniciar',{});editando=false;sel=null;desenhar()}));
-$('avancar').addEventListener('click',seguro(async()=>{E=await api('/api/relogio',{horas:24});editando=false;desenhar()}));
-$('resumo').addEventListener('click',seguro(async()=>{const r=await api('/api/resumo');$('resumoTxt').hidden=false;$('resumoTxt').textContent=r.texto}));
-carregar().catch(()=>{});setInterval(()=>{if(!editando&&document.activeElement?.tagName!=='INPUT')carregar().catch(()=>{})},5000);
+for(const b of document.querySelectorAll('[data-close]'))b.addEventListener('click',()=>$(b.dataset.close).close());
+for(const id of ['abrirSim','novoLeadBtn','simBtn'])$(id).addEventListener('click',abrirSim);
+$('etapaSel').addEventListener('change',seguro(async e=>{await executar(async()=>{E=await api('/api/leads/'+sel+'/etapa',{etapa:e.target.value});editando=false;desenhar()})}));
+$('simEnviar').addEventListener('click',seguro(()=>executar(async()=>{const id=$('simLead').value,t=$('simMsg').value.trim();if(!id||!t)return;E=await api('/api/simular',{leadId:id,texto:t});sel=id;editando=false;$('simMsg').value='';$('simDialog').close();areaMobile('atendimento');desenhar()})));
+$('simMsg').addEventListener('keydown',e=>{if(e.key==='Enter')$('simEnviar').click()});
+$('nEnviar').addEventListener('click',seguro(()=>executar(async()=>{const t=$('nMsg').value.trim();if(!t){mostrarErro('Escreva a mensagem fictícia do cliente.');return}E=await api('/api/simular',{nome:$('nNome').value.trim(),texto:t});sel=E.leadId??null;editando=false;['nNome','nMsg'].forEach(i=>$(i).value='');$('simDialog').close();areaMobile('atendimento');desenhar()})));
+$('reiniciar').addEventListener('click',seguro(()=>executar(async()=>{E=await api('/api/reiniciar',{});editando=false;sel=null;$('simDialog').close();areaMobile('atendimento');desenhar()})));
+$('avancar').addEventListener('click',seguro(()=>executar(async()=>{E=await api('/api/relogio',{horas:24});editando=false;$('simDialog').close();areaMobile('atendimento');desenhar()})));
+$('resumo').addEventListener('click',seguro(async()=>{const r=await api('/api/resumo');$('resumoTxt').textContent=r.texto;$('copiarResumo').textContent='Copiar texto';$('resumoDialog').showModal()}));
+$('copiarResumo').addEventListener('click',seguro(async()=>{try{await navigator.clipboard.writeText($('resumoTxt').textContent);$('copiarResumo').textContent='Copiado ✓'}catch{$('copiarResumo').textContent='Selecione o texto para copiar'}}));
+$('atividade').addEventListener('click',()=>{$('atividadeDialog').showModal()});
+function atualizarTema(){const dark=document.documentElement.dataset.theme==='dark';$('tema').textContent=dark?'☀':'☾';$('tema').setAttribute('aria-label',dark?'Ativar tema claro':'Ativar tema escuro');$('tema').title=dark?'Ativar tema claro':'Ativar tema escuro'}
+$('tema').addEventListener('click',()=>{const theme=document.documentElement.dataset.theme==='dark'?'light':'dark';document.documentElement.dataset.theme=theme;try{localStorage.setItem('comercial-tema',theme)}catch{}atualizarTema()});atualizarTema();
+$('tabAtendimento').addEventListener('click',()=>areaMobile('atendimento'));$('tabDia').addEventListener('click',()=>areaMobile('dia'));
+carregar().catch(()=>{});setInterval(()=>{const active=document.activeElement;if(!busy&&!editando&&!document.querySelector('dialog[open]')&&!['INPUT','TEXTAREA','SELECT'].includes(active?.tagName))carregar().catch(()=>{})},5000);
 </script>
 </body>
 </html>
